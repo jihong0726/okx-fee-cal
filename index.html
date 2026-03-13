@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>欧易计算器 V8.0</title>
+    <title>欧易计算器 V9.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f5f5f5; color: #1e2329; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         .panel-bg { background-color: #ffffff; border: 1px solid #eaecef; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         
-        .info-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; font-size: 14px; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #f0f0f0; font-size: 13px; }
+        .info-row:last-child { border-bottom: none; }
         .info-label { color: #707a8a; }
-        .info-val { color: #1e2329; text-align: right; }
-        .info-val.mono { font-family: monospace; font-size: 15px; }
+        .info-val { color: #1e2329; font-family: monospace; font-weight: 500; text-align: right; }
+        .info-val-large { font-family: monospace; font-size: 24px; font-weight: bold; }
 
         .sub-tab { font-size: 14px; font-weight: 500; color: #707a8a; cursor: pointer; padding-bottom: 8px; border-bottom: 2px solid transparent; }
         .sub-tab.active { color: #1e2329; border-bottom: 2px solid #1e2329; font-weight: 600; }
@@ -22,7 +23,7 @@
         .okx-input { background: transparent; width: 100%; border: none; outline: none; padding: 10px 12px; font-size: 15px; color: #1e2329; font-family: monospace; font-weight: 500; }
         .okx-input:disabled { color: #b7bdc6; cursor: not-allowed; }
 
-        /* 修复后的完美滑块 */
+        /* 修复滑块 */
         .slider-wrapper { position: relative; height: 24px; display: flex; align-items: center; margin-bottom: 8px; }
         .slider-track-bg { position: absolute; width: 100%; height: 4px; background: #eaecef; border-radius: 2px; z-index: 1; }
         .slider-marks { position: absolute; width: 100%; height: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 2; pointer-events: none; }
@@ -31,10 +32,8 @@
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: white; border: 5px solid #1e2329; cursor: pointer; transition: transform 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: transparent; cursor: pointer; }
-        
         .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #b7bdc6; font-family: monospace; padding: 0 2px; }
 
-        /* 费用与按钮 */
         .btn-buy { background: #0ecb81; color: white; transition: 0.2s; }
         .btn-buy:hover { background: #0b9e65; }
         .btn-sell { background: #f6465d; color: white; transition: 0.2s; }
@@ -42,7 +41,6 @@
         .cost-row { display: flex; justify-content: space-between; font-size: 12px; color: #707a8a; margin-top: 8px; }
         .cost-val { color: #1e2329; font-family: monospace; font-weight: 500;}
         .text-risk { color: #f6465d; font-weight: bold; }
-        
         input[type=number]::-webkit-inner-spin-button { opacity: 1; height: 30px; }
         
         /* 弹窗样式 */
@@ -62,6 +60,7 @@
                     <option value="BTC-USDT-SWAP">BTC-USDT-SWAP</option>
                     <option value="ETH-USDT-SWAP">ETH-USDT-SWAP</option>
                     <option value="SOL-USDT-SWAP">SOL-USDT-SWAP</option>
+                    <option value="DOGE-USDT-SWAP">DOGE-USDT-SWAP</option>
                 </select>
                 <div class="text-[26px] font-bold flex items-center gap-2 cursor-pointer hover:text-gray-600">
                     <span id="displayPairTitle">BTCUSDT 永续</span>
@@ -69,33 +68,34 @@
                 </div>
             </div>
 
-            <div class="flex-1 space-y-1">
-                <div class="info-row"><span class="info-label">合约面值</span><span class="info-val" id="infoCtVal">0.01 BTC</span></div>
-                <div class="info-row"><span class="info-label">最大杠杆</span><span class="info-val" id="infoLevRange">100x</span></div>
-                
-                <div class="info-row mt-6 pt-6 border-t border-gray-100">
-                    <span class="info-label">实时最新价</span>
-                    <span class="info-val mono font-bold text-[#0ecb81] text-[22px]" id="wsLastPrice">--</span>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-label">标记价格</span>
-                    <span class="info-val mono font-bold" id="wsMarkPrice">--</span>
-                </div>
+            <div class="mb-4">
+                <div class="text-[#707a8a] text-xs font-bold mb-1">实时最新价</div>
+                <div class="info-val-large text-[#0ecb81]" id="wsLastPrice">--</div>
+            </div>
 
-                <div class="flex justify-between items-center p-4 bg-[#0ecb81]/5 rounded-lg border border-[#0ecb81]/20 mt-4" id="fundingBox">
-                    <span class="text-[14px] font-bold text-gray-700">当前资金费率</span>
-                    <div class="text-right">
-                        <div class="mono font-bold text-xl text-[#0ecb81]" id="wsFundingRate">--</div>
-                        <div class="text-[12px] font-bold flex items-center justify-end gap-1 mt-1 text-[#0ecb81]" id="wsFundingDesc">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                            <span>拉取中...</span>
-                        </div>
-                        <div class="text-[10px] text-gray-400 mt-1.5">每 8 小时结算一次</div>
+            <div class="bg-gray-50/50 rounded p-2 mb-4 border border-gray-100">
+                <div class="info-row"><span class="info-label">标记价格</span><span class="info-val" id="wsMarkPrice">--</span></div>
+                <div class="info-row"><span class="info-label">指数价格</span><span class="info-val" id="wsIndexPrice">--</span></div>
+                <div class="info-row"><span class="info-label">24h 最高</span><span class="info-val" id="wsHigh24h">--</span></div>
+                <div class="info-row"><span class="info-label">24h 最低</span><span class="info-val" id="wsLow24h">--</span></div>
+                <div class="info-row"><span class="info-label">24h 成交量</span><span class="info-val" id="wsVol24h">--</span></div>
+                <div class="info-row"><span class="info-label">全网持仓量</span><span class="info-val" id="wsOpenInterest">--</span></div>
+                <div class="info-row"><span class="info-label">合约面值</span><span class="info-val" id="infoCtVal">0.01 BTC</span></div>
+            </div>
+
+            <div class="flex justify-between items-center p-4 rounded-lg border transition-colors mt-auto" id="fundingBox" style="background-color: #f9fafb; border-color: #eaecef;">
+                <div>
+                    <div class="text-[14px] font-bold text-gray-700">当前资金费率</div>
+                    <div class="text-[12px] font-mono font-medium text-gray-500 mt-1 flex items-center gap-1">
+                        ⏱ <span id="wsFundingCountdown">--h --m --s</span>
                     </div>
                 </div>
-
-                <div class="info-row mt-4"><span class="info-label">24 小时成交量</span><span class="info-val mono" id="wsVol24h">--</span></div>
+                <div class="text-right">
+                    <div class="mono font-bold text-xl" id="wsFundingRate">--</div>
+                    <div class="text-[12px] font-bold flex items-center justify-end gap-1 mt-1" id="wsFundingDesc">
+                        <span>拉取中...</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -164,14 +164,14 @@
 
             <div class="mt-6 pt-5 border-t border-gray-200">
                 <div class="flex justify-between items-center mb-4">
-                    <span class="text-[14px] font-bold text-[#1e2329]">手续费明细</span>
+                    <span class="text-[14px] font-bold text-[#1e2329]">用户等级</span>
                     <select id="vipLevel" class="text-xs border border-gray-300 rounded px-2 py-1.5 outline-none bg-white cursor-pointer font-medium" onchange="calculate()">
-                        <option value="Regular">普通用户</option><option value="VIP 1">VIP 1</option><option value="VIP 2">VIP 2</option>
-                        <option value="VIP 5">VIP 5</option>
+                        <option value="Regular">普通用户</option>
+                        <option value="VIP 1">VIP 1</option><option value="VIP 2">VIP 2</option>
+                        <option value="VIP 3">VIP 3</option><option value="VIP 4">VIP 4</option>
+                        <option value="VIP 5">VIP 5</option><option value="VIP 6">VIP 6</option>
+                        <option value="VIP 7">VIP 7</option><option value="VIP 8">VIP 8</option>
                     </select>
-                </div>
-                <div class="flex justify-between text-xs text-[#707a8a] mb-2">
-                    <span>名义价值 (乘杠杆后)</span><span class="font-mono text-[#1e2329]" id="detailNotional">0.00 USDT</span>
                 </div>
                 <div class="flex justify-between text-xs text-[#707a8a]">
                     <span>单边手续费 (<span id="feeRateText" class="font-bold text-[#1e2329]">挂单 0.02%</span>)</span>
@@ -190,8 +190,8 @@
             <div class="p-6">
                 <div class="text-sm text-gray-500 mb-2 font-medium">杠杆倍数</div>
                 <div class="flex bg-[#f5f5f5] rounded border border-transparent focus-within:border-[#c9ccd2] focus-within:bg-white p-1 items-center mb-4 transition-colors">
-                    <input type="number" id="modalLevInput" class="bg-transparent flex-1 outline-none text-lg font-mono font-bold px-3 py-1" oninput="updateModalCalc()">
-                    <span class="text-gray-500 mr-2 font-bold">x</span>
+                    <input type="number" id="modalLevInput" class="bg-transparent flex-1 outline-none text-lg font-mono font-bold px-3 py-1 text-right" oninput="updateModalCalc()">
+                    <span class="text-gray-500 mr-2 font-bold px-2">x</span>
                     <div class="flex flex-col border-l border-gray-200 pl-2 pr-1">
                         <button class="text-gray-400 hover:text-black leading-none py-1.5" onclick="stepLev(1)">▲</button>
                         <button class="text-gray-400 hover:text-black leading-none py-1.5" onclick="stepLev(-1)">▼</button>
@@ -204,10 +204,9 @@
                     <button class="lev-quick-btn" onclick="setQuickLev(50)">50x</button>
                     <button class="lev-quick-btn" onclick="setQuickLev(100)">100x</button>
                 </div>
-                <div class="text-[13px] text-gray-500 space-y-2 mb-6 bg-gray-50 p-3 rounded">
+                <div class="text-[13px] text-gray-500 space-y-2 mb-8 bg-gray-50 p-3 rounded">
                     <div class="flex justify-between"><span>杠杆倍数调整后最大可开</span><span id="modalMaxOpen" class="text-black font-mono font-bold">-- USDT</span></div>
                     <div class="flex justify-between"><span>所需保证金</span><span id="modalReqMargin" class="text-black font-mono font-bold">0.00 USDT</span></div>
-                    <div class="text-[#fcd535] mt-2 font-medium" id="modalWarning">当前杠杆倍数较高，请注意风险</div>
                 </div>
                 <div class="flex gap-3 mt-2">
                     <button class="flex-1 py-3 bg-white border border-gray-300 hover:bg-gray-50 rounded-full font-bold text-[#1e2329] transition-colors" onclick="closeLevModal()">取消</button>
@@ -221,15 +220,18 @@
         const INSTRUMENTS = {
             "BTC-USDT-SWAP": { baseCcy: "BTC", ctVal: 0.01, maxLev: 100 },
             "ETH-USDT-SWAP": { baseCcy: "ETH", ctVal: 0.1, maxLev: 100 },
-            "SOL-USDT-SWAP": { baseCcy: "SOL", ctVal: 1, maxLev: 50 }
+            "SOL-USDT-SWAP": { baseCcy: "SOL", ctVal: 1, maxLev: 50 },
+            "DOGE-USDT-SWAP": { baseCcy: "DOGE", ctVal: 1000, maxLev: 50 }
         };
 
         const FEES = {
-            "Regular": { maker: 0.00020, taker: 0.00050 }, "VIP 1": { maker: 0.00010, taker: 0.00040 },
-            "VIP 2": { maker: 0.00008, taker: 0.00035 }, "VIP 5": { maker: -0.00002, taker: 0.00020 }
+            "Regular":{ maker:0.00020, taker:0.00050 }, "VIP 1":{ maker:0.00010, taker:0.00040 },
+            "VIP 2":{ maker:0.00008, taker:0.00035 }, "VIP 3":{ maker:0.00005, taker:0.00030 },
+            "VIP 4":{ maker:0.00000, taker:0.00025 }, "VIP 5":{ maker:-0.00002, taker:0.00020 },
+            "VIP 6":{ maker:-0.00004, taker:0.00015 }, "VIP 7":{ maker:-0.00006, taker:0.00012 },
+            "VIP 8":{ maker:-0.00008, taker:0.00010 }
         };
 
-        // 引入真实引擎中的维持保证金率(MMR)，让强平价计算不再是玩具
         const MMR = 0.004; 
 
         let state = {
@@ -244,31 +246,53 @@
         };
 
         let ws = null;
+        let fundingTimer = null;
 
         function initWebSocket() {
             if(ws) ws.close();
             ws = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
-            ws.onopen = () => { 
-                ws.send(JSON.stringify({ op: "subscribe", args: [
-                    { channel: "tickers", instId: state.instId }, 
-                    { channel: "mark-price", instId: state.instId },
-                    { channel: "funding-rate", instId: state.instId }
-                ]})); 
-            };
+            ws.onopen = () => { subscribeData(state.instId); };
             ws.onmessage = (event) => {
                 if(event.data === 'pong') return;
                 const res = JSON.parse(event.data);
                 if (res.data && res.data[0]) {
-                    if (res.arg.channel === 'tickers') handleTicker(res.data[0]);
-                    if (res.arg.channel === 'mark-price') handleMarkPrice(res.data[0]);
-                    if (res.arg.channel === 'funding-rate') handleFundingRate(res.data[0]);
+                    const ch = res.arg.channel;
+                    if (ch === 'tickers') handleTicker(res.data[0]);
+                    if (ch === 'mark-price') handleMarkPrice(res.data[0]);
+                    if (ch === 'index-tickers') handleIndexPrice(res.data[0]);
+                    if (ch === 'open-interest') handleOI(res.data[0]);
+                    if (ch === 'funding-rate') handleFundingRate(res.data[0]);
                 }
             };
+        }
+
+        function subscribeData(instId) {
+            const indexId = instId.replace('-SWAP', '');
+            ws.send(JSON.stringify({ op: "subscribe", args: [
+                { channel: "tickers", instId: instId }, 
+                { channel: "mark-price", instId: instId },
+                { channel: "index-tickers", instId: indexId },
+                { channel: "open-interest", instId: instId },
+                { channel: "funding-rate", instId: instId }
+            ]})); 
+        }
+
+        function unsubscribeData(instId) {
+            const indexId = instId.replace('-SWAP', '');
+            ws.send(JSON.stringify({ op: "unsubscribe", args: [
+                { channel: "tickers", instId: instId }, 
+                { channel: "mark-price", instId: instId },
+                { channel: "index-tickers", instId: indexId },
+                { channel: "open-interest", instId: instId },
+                { channel: "funding-rate", instId: instId }
+            ]})); 
         }
 
         function handleTicker(data) {
             state.lastPrice = parseFloat(data.last);
             document.getElementById('wsLastPrice').innerText = state.lastPrice.toFixed(5);
+            document.getElementById('wsHigh24h').innerText = parseFloat(data.high24h).toFixed(5);
+            document.getElementById('wsLow24h').innerText = parseFloat(data.low24h).toFixed(5);
             document.getElementById('wsVol24h').innerText = parseFloat(data.volCcy24h).toLocaleString(undefined, {maximumFractionDigits: 2}) + ` ${INSTRUMENTS[state.instId].baseCcy}`;
             
             if (state.orderType === 'market') calculate();
@@ -277,8 +301,17 @@
             }
         }
         
-        function handleMarkPrice(data) { document.getElementById('wsMarkPrice').innerText = "₮" + parseFloat(data.markPx).toFixed(5); }
+        function handleMarkPrice(data) { document.getElementById('wsMarkPrice').innerText = "₮ " + parseFloat(data.markPx).toFixed(5); }
+        function handleIndexPrice(data) { document.getElementById('wsIndexPrice').innerText = "₮ " + parseFloat(data.idxPx).toFixed(5); }
         
+        function handleOI(data) {
+            // 将张数转化为近似美金价值
+            const oiUsdt = parseFloat(data.oi) * INSTRUMENTS[state.instId].ctVal * state.lastPrice;
+            if(!isNaN(oiUsdt)) {
+                document.getElementById('wsOpenInterest').innerText = (oiUsdt / 100000000).toFixed(2) + "亿 USDT";
+            }
+        }
+
         function handleFundingRate(data) {
             const rate = parseFloat(data.fundingRate);
             const rateEl = document.getElementById('wsFundingRate');
@@ -296,6 +329,22 @@
                 boxEl.style.backgroundColor = 'rgba(246,70,93,0.05)'; boxEl.style.borderColor = 'rgba(246,70,93,0.2)';
                 descEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="transform: rotate(180deg);"><path d="M5 12h14M12 5l7 7-7 7"/></svg> 空仓 支付 多仓`;
             }
+
+            // 资金费率倒计时计算
+            const nextTime = parseInt(data.nextFundingTime);
+            if(fundingTimer) clearInterval(fundingTimer);
+            fundingTimer = setInterval(() => {
+                const now = new Date().getTime();
+                const diff = nextTime - now;
+                if(diff > 0) {
+                    const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                    document.getElementById('wsFundingCountdown').innerText = `${h}h ${m}m ${s}s`;
+                } else {
+                    document.getElementById('wsFundingCountdown').innerText = "结算中...";
+                }
+            }, 1000);
         }
 
         function toggleMarginMode() {
@@ -307,8 +356,7 @@
         // --- 杠杆弹窗逻辑 ---
         function openLevModal() {
             document.getElementById('modalLevInput').value = state.lev;
-            updateModalQuickBtns();
-            updateModalCalc();
+            updateModalQuickBtns(); updateModalCalc();
             const modal = document.getElementById('levModal');
             const content = document.getElementById('levModalContent');
             modal.classList.remove('hidden');
@@ -343,7 +391,6 @@
                 if(parseInt(btn.innerText) === val) btn.classList.add('active');
                 else btn.classList.remove('active');
             });
-            document.getElementById('modalWarning').style.color = val >= 50 ? '#f6465d' : '#fcd535';
         }
 
         function updateModalCalc() {
@@ -368,7 +415,6 @@
             if(document.getElementById('percentSlider').value > 0) slidePercent();
         }
 
-        // --- 核心算力 ---
         function switchPair() {
             const oldId = state.instId;
             state.instId = document.getElementById('instId').value;
@@ -376,10 +422,8 @@
             
             document.getElementById('displayPairTitle').innerText = state.instId.replace('-SWAP', ' 永续').replace('-', '');
             document.getElementById('infoCtVal').innerText = `${inst.ctVal.toLocaleString()} ${inst.baseCcy}`;
-            document.getElementById('infoLevRange').innerText = `${inst.maxLev}x`;
             document.getElementById('menuCcy').innerText = inst.baseCcy;
             
-            // 修正超限杠杆
             if(state.lev > inst.maxLev) {
                 state.lev = inst.maxLev;
                 document.getElementById('panelLevDisplay').innerText = state.lev.toFixed(2) + "x";
@@ -392,11 +436,18 @@
             document.getElementById('percentSlider').value = 0;
 
             if(ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ op: "unsubscribe", args: [{ channel: "tickers", instId: oldId }, { channel: "mark-price", instId: oldId }, { channel: "funding-rate", instId: oldId }] }));
-                ws.send(JSON.stringify({ op: "subscribe", args: [{ channel: "tickers", instId: state.instId }, { channel: "mark-price", instId: state.instId }, { channel: "funding-rate", instId: state.instId }] }));
+                unsubscribeData(oldId);
+                subscribeData(state.instId);
             }
+            
+            // 数据重置占位
             document.getElementById('wsFundingRate').innerText = "--";
             document.getElementById('wsFundingDesc').innerHTML = `<span>拉取中...</span>`;
+            document.getElementById('wsIndexPrice').innerText = "--";
+            document.getElementById('wsOpenInterest').innerText = "--";
+            if(fundingTimer) clearInterval(fundingTimer);
+            document.getElementById('wsFundingCountdown').innerText = "--h --m --s";
+            
             calculate();
         }
 
@@ -472,7 +523,6 @@
             let calcPrice = state.orderType === 'market' ? state.lastPrice : (parseFloat(document.getElementById('priceInput').value) || state.lastPrice);
             let inputSize = parseFloat(document.getElementById('sizeInput').value) || 0;
             
-            // Maker vs Taker 判定
             const feeRate = state.orderType === 'market' ? FEES[level].taker : FEES[level].maker;
             const feeTypeStr = state.orderType === 'market' ? '吃单(Taker)' : '挂单(Maker)';
             
@@ -485,12 +535,11 @@
             }
 
             const fee = notional * feeRate;
-            document.getElementById('detailNotional').innerText = notional.toFixed(2) + " USDT";
             document.getElementById('feeRateText').innerText = `${feeTypeStr} ${(feeRate * 100).toFixed(3)}%`;
             document.getElementById('detailFee').innerText = fee.toFixed(4) + " USDT";
 
             if (notional <= 0 || calcPrice <= 0 || coins <= 0) {
-                document.getElementById('costLong').innerText = "-- USDT"; document.getElementById('costShort').innerText = "-- USDT";
+                document.getElementById('costLong').innerText = "--"; document.getElementById('costShort').innerText = "--";
                 document.getElementById('liqLong').innerText = "--"; document.getElementById('liqShort').innerText = "--";
                 return;
             }
@@ -500,17 +549,13 @@
             document.getElementById('costLong').innerText = cost.toFixed(2) + " USDT";
             document.getElementById('costShort').innerText = cost.toFixed(2) + " USDT";
 
-            // 包含维持保证金率(MMR)的强平核心算法
             let liqLong = 0;
             let liqShort = 0;
 
             if (state.marginMode === 'isolated') {
-                // 逐仓：保证金 - 未实现亏损 = 维持保证金 + 手续费
-                // 简化公式，贴近 OKX 引擎
                 liqLong = calcPrice * (1 - (1/state.lev) + MMR + feeRate);
                 liqShort = calcPrice * (1 + (1/state.lev) - MMR - feeRate);
             } else {
-                // 全仓：用整个账户可用余额抗跌，同时考虑标的维持保证金
                 const effectiveBalance = state.availBalance - fee; 
                 liqLong = calcPrice - (effectiveBalance / coins) + (calcPrice * MMR);
                 liqShort = calcPrice + (effectiveBalance / coins) - (calcPrice * MMR);
