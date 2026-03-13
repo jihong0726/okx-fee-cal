@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欧易计算器 | Live API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0b0b0b; color: #ffffff; font-family: 'Inter', -apple-system, sans-serif; }
+        .okx-panel { background-color: #121212; border: 1px solid #262626; max-width: 380px; margin: 0 auto; }
+        .okx-input-group { background-color: #1e1e1e; border: 1px solid #333; transition: border-color 0.2s; }
+        .okx-input-group:focus-within { border-color: #ffffff; }
+        .okx-input { background: transparent; color: #fff; width: 100%; outline: none; font-weight: 500; font-family: monospace;}
+        .okx-input:disabled { color: #555; cursor: not-allowed; }
+        
+        .okx-green { background-color: #00b445; }
+        .okx-red { background-color: #ff3a33; }
+        
+        .okx-tab { color: #888; border-bottom: 2px solid transparent; padding-bottom: 8px; cursor: pointer; transition: 0.2s;}
+        .okx-tab.active { color: #fff; border-bottom: 2px solid #fff; font-weight: 600; }
+        
+        .text-muted { color: #888; font-size: 12px; }
+        .text-val { font-family: monospace; font-size: 13px; transition: color 0.3s; }
+        
+        /* 价格更新时的闪烁动画 */
+        @keyframes priceFlashUp { 0% { color: #00b445; } 100% { color: #fff; } }
+        @keyframes priceFlashDown { 0% { color: #ff3a33; } 100% { color: #fff; } }
+        .flash-up { animation: priceFlashUp 0.8s ease-out; }
+        .flash-down { animation: priceFlashDown 0.8s ease-out; }
+
+        /* API 状态指示灯 */
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #555; margin-right: 6px; }
+        .status-dot.live { background-color: #00b445; box-shadow: 0 0 8px #00b445; }
+        
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="flex justify-center items-start min-h-screen pt-10 px-4">
+
+    <div class="okx-panel w-full rounded-xl p-5 shadow-2xl relative">
+        
+        <div class="absolute top-3 right-4 text-[10px] text-gray-500 flex items-center">
+            <span id="apiStatusDot" class="status-dot"></span>
+            <span id="apiStatusText">连接中...</span>
+        </div>
+
+        <div class="flex justify-between items-center mb-6 mt-2">
+            <select id="instId" class="bg-transparent text-xl font-bold outline-none cursor-pointer" onchange="switchInstrument()">
+                <option value="BTC-USDT-SWAP">BTCUSDT 永续</option>
+                <option value="ETH-USDT-SWAP">ETHUSDT 永续</option>
+                <option value="SOL-USDT-SWAP">SOLUSDT 永续</option>
+                <option value="DOGE-USDT-SWAP">DOGEUSDT 永续</option>
+            </select>
+            <div class="flex gap-2 text-sm bg-[#1e1e1e] rounded px-2 py-1 cursor-pointer border border-[#333]">
+                <span class="text-gray-400">逐仓</span>
+                <span id="levDisplay" class="font-bold">20x</span>
+            </div>
+        </div>
+
+        <div class="mb-5">
+            <input type="range" id="leverage" min="1" max="100" value="20" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer" oninput="updateLev()">
+        </div>
+
+        <div class="flex gap-4 mb-4 text-sm font-medium border-b border-[#262626]">
+            <div id="tabLimit" class="okx-tab active" onclick="setOrderType('limit')">限价委托</div>
+            <div id="tabMarket" class="okx-tab" onclick="setOrderType('market')">市价(实时)</div>
+            <div class="text-xs text-gray-500 ml-auto self-center pb-2 flex items-center gap-1">
+                费率
+                <select id="userLevel" class="bg-transparent outline-none text-gray-400" onchange="calculate()">
+                    <option value="Regular">Lv 1</option>
+                    <option value="VIP1">VIP 1</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="okx-input-group rounded-md p-2 mb-3 flex items-center justify-between">
+            <input type="number" id="price" value="0" class="okx-input text-sm" placeholder="实时获取中..." oninput="userManualPrice()">
+            <span class="text-muted pr-1">USDT</span>
+        </div>
+
+        <div class="okx-input-group rounded-md p-2 mb-4 flex items-center justify-between">
+            <input type="number" id="size" value="1" class="okx-input text-sm" placeholder="数量" oninput="calculate()">
+            <div class="flex items-center gap-1 border-l border-[#333] pl-2 cursor-pointer" onclick="toggleUnit()">
+                <span id="unitLabel" class="text-muted hover:text-white transition-colors">张</span>
+            </div>
+        </div>
+
+        <div class="bg-[#1a1a1a] rounded-lg p-3 mb-5 space-y-2.5 text-sm border border-[#262626]">
+            <div class="flex justify-between items-center">
+                <span class="text-muted">初始保证金</span>
+                <span class="text-val" id="resMargin">0.00 USDT</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-muted">开仓手续费</span>
+                <span class="text-val" id="resFee">0.00 USDT</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-muted">强平价(多头预估)</span>
+                <span class="text-val text-orange-500" id="resLiq">--</span>
+            </div>
+            <div class="flex justify-between items-center pt-2 mt-1 border-t border-[#262626]">
+                <span class="text-muted font-bold text-white">预计总占用</span>
+                <span class="text-val font-bold text-blue-400 text-base" id="resTotal">0.00 USDT</span>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="mockOrder('买入')" class="flex-1 okx-green text-white font-bold py-3 rounded-lg text-sm transition-transform active:scale-95">买入开多</button>
+            <button onclick="mockOrder('卖出')" class="flex-1 okx-red text-white font-bold py-3 rounded-lg text-sm transition-transform active:scale-95">卖出开空</button>
+        </div>
+        
+        <div class="text-center mt-4">
+            <span class="text-[10px] text-gray-600" id="ctValDisplay">1张 = 0.01 BTC</span>
+        </div>
+    </div>
+
+    <script>
+        const INSTRUMENTS = {
+            "BTC-USDT-SWAP": { baseCcy: "BTC", ctVal: 0.01 },
+            "ETH-USDT-SWAP": { baseCcy: "ETH", ctVal: 0.1 },
+            "SOL-USDT-SWAP": { baseCcy: "SOL", ctVal: 1 },
+            "DOGE-USDT-SWAP": { baseCcy: "DOGE", ctVal: 1000 }
+        };
+
+        const FEES = {
+            "Regular": { maker: 0.0002, taker: 0.0005 },
+            "VIP1": { maker: 0.0001, taker: 0.0004 }
+        };
+
+        let state = { instId: "BTC-USDT-SWAP", orderType: "limit", unit: "cont", lev: 20, lastPrice: 0, isManual: false };
+        let ws = null;
+
+        // 1. 初始化 WebSocket 连接 (核心调用)
+        function initWebSocket() {
+            ws = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
+            
+            ws.onopen = () => {
+                document.getElementById('apiStatusDot').classList.add('live');
+                document.getElementById('apiStatusText').innerText = "OKX API 实时连线";
+                subscribe(state.instId); // 自动订阅当前币对
+            };
+
+            ws.onmessage = (event) => {
+                const response = JSON.parse(event.data);
+                if (response.data && response.data[0]) {
+                    const ticker = response.data[0];
+                    handleTick(ticker.last);
+                }
+            };
+
+            ws.onclose = () => {
+                document.getElementById('apiStatusDot').classList.remove('live');
+                document.getElementById('apiStatusText').innerText = "连接断开，重连中...";
+                setTimeout(initWebSocket, 3000);
+            };
+        }
+
+        // 2. 订阅管理
+        function subscribe(instId) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ op: "subscribe", args: [{ channel: "tickers", instId: instId }] }));
+            }
+        }
+        function unsubscribe(instId) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ op: "unsubscribe", args: [{ channel: "tickers", instId: instId }] }));
+            }
+        }
+
+        // 3. 处理实时行情推送
+        function handleTick(newPrice) {
+            const priceEl = document.getElementById('price');
+            const prevPrice = state.lastPrice;
+            state.lastPrice = parseFloat(newPrice);
+
+            // 只有在市价模式，或者限价模式下用户没有手动改过价格时，才自动更新输入框
+            if (state.orderType === 'market' || !state.isManual) {
+                priceEl.value = state.lastPrice;
+                
+                // 价格跳动动效
+                priceEl.classList.remove('flash-up', 'flash-down');
+                void priceEl.offsetWidth; // 触发重绘
+                if (state.lastPrice > prevPrice) priceEl.classList.add('flash-up');
+                else if (state.lastPrice < prevPrice) priceEl.classList.add('flash-down');
+            }
+            calculate();
+        }
+
+        // 4. UI 交互逻辑
+        function switchInstrument() {
+            const oldInstId = state.instId;
+            state.instId = document.getElementById('instId').value;
+            state.isManual = false; // 重置手动标记
+            
+            const inst = INSTRUMENTS[state.instId];
+            document.getElementById('ctValDisplay').innerText = `1张 = ${inst.ctVal} ${inst.baseCcy}`;
+            if (state.unit === 'ccy') document.getElementById('unitLabel').innerText = inst.baseCcy;
+            
+            // WS 切换订阅
+            unsubscribe(oldInstId);
+            subscribe(state.instId);
+        }
+
+        function setOrderType(type) {
+            state.orderType = type;
+            const priceInput = document.getElementById('price');
+            document.getElementById('tabLimit').className = `okx-tab ${type === 'limit' ? 'active' : ''}`;
+            document.getElementById('tabMarket').className = `okx-tab ${type === 'market' ? 'active' : ''}`;
+
+            if (type === 'market') {
+                state.isManual = false;
+                priceInput.disabled = true;
+                priceInput.value = state.lastPrice; // 立即同步最新盘口价
+            } else {
+                priceInput.disabled = false;
+            }
+            calculate();
+        }
+
+        function userManualPrice() {
+            if (state.orderType === 'limit') state.isManual = true; // 标记用户手动修改了价格，不再被 WS 覆盖
+            calculate();
+        }
+
+        function updateLev() {
+            state.lev = parseInt(document.getElementById('leverage').value);
+            document.getElementById('levDisplay').innerText = state.lev + "x";
+            calculate();
+        }
+
+        function toggleUnit() {
+            const inst = INSTRUMENTS[state.instId];
+            const sizeInput = document.getElementById('size');
+            let currentVal = parseFloat(sizeInput.value) || 0;
+
+            if (state.unit === 'cont') {
+                state.unit = 'ccy';
+                document.getElementById('unitLabel').innerText = inst.baseCcy;
+                sizeInput.value = (currentVal * inst.ctVal).toFixed(4);
+            } else {
+                state.unit = 'cont';
+                document.getElementById('unitLabel').innerText = '张';
+                sizeInput.value = Math.ceil(currentVal / inst.ctVal);
+            }
+            calculate();
+        }
+
+        // 5. 核心计算 (复用之前的逻辑，但现在由 WS 驱动)
+        function calculate() {
+            const inst = INSTRUMENTS[state.instId];
+            const level = document.getElementById('userLevel').value;
+            let calcPrice = parseFloat(document.getElementById('price').value);
+            if(isNaN(calcPrice) || calcPrice <= 0) calcPrice = 0;
+
+            let inputSize = parseFloat(document.getElementById('size').value) || 0;
+            let contNum = state.unit === 'cont' ? inputSize : Math.ceil(inputSize / inst.ctVal); 
+            const notional = contNum * inst.ctVal * calcPrice;
+
+            if(notional === 0) return;
+
+            const margin = notional / state.lev;
+            const feeRate = state.orderType === 'market' ? FEES[level].taker : FEES[level].maker;
+            const fee = notional * feeRate;
+            const liqPrice = calcPrice * (1 - (1 / state.lev));
+
+            document.getElementById('resMargin').innerText = margin.toFixed(2) + " USDT";
+            document.getElementById('resFee').innerText = fee.toFixed(4) + " USDT";
+            document.getElementById('resTotal').innerText = (margin + fee).toFixed(2) + " USDT";
+            document.getElementById('resLiq').innerText = liqPrice.toFixed(2) + " USDT";
+        }
+
+        function mockOrder(side) {
+            alert(`【MCP Agent Action】\n指令已准备：执行 ${side} ${state.instId} ${document.getElementById('size').value} ${document.getElementById('unitLabel').innerText}\n\n当前价格: ${document.getElementById('price').value}\n\n* 下一步即可将此结构体传递给 OKX Agent Trade Kit 进行私钥签名与发单。`);
+        }
+
+        // 启动！
+        initWebSocket();
+
+    </script>
+</body>
+</html>
