@@ -3,194 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>欧易计算器 | Pro 交易面板</title>
+    <title>欧易计算器 | 真实面板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* OKX 极致暗黑风格 */
-        body { background-color: #000000; color: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .okx-border { border: 1px solid #262626; }
-        .bg-panel { background-color: #121212; }
-        .bg-input { background-color: #1e1e1e; }
+        /* 欧易 Web 端真实色彩系统 */
+        body { background-color: #0b0e11; color: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         
-        /* 交互输入框 */
-        .okx-input-group { border: 1px solid #333; transition: all 0.2s; }
-        .okx-input-group:focus-within { border-color: #ffffff; background-color: #262626; }
-        .okx-input { background: transparent; color: #fff; width: 100%; outline: none; font-weight: 500; font-family: monospace;}
-        .okx-input:disabled { color: #555; cursor: not-allowed; }
+        /* 面板背景与边框 */
+        .okx-panel { background-color: #181a20; border: 1px solid #2b3139; }
         
-        /* 颜色定义 */
-        .color-up { color: #00b445; }
-        .color-down { color: #ff3a33; }
-        .bg-up { background-color: #00b445; }
-        .bg-down { background-color: #ff3a33; }
-        .hover-bg-up:hover { background-color: #009939; }
-        .hover-bg-down:hover { background-color: #e03029; }
+        /* 真实欧易输入框样式：内嵌标签 */
+        .okx-input-wrapper {
+            background-color: #2b3139; 
+            border: 1px solid transparent; 
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            height: 48px; /* 加大高度，提升辨识度 */
+            transition: border-color 0.2s;
+        }
+        .okx-input-wrapper:focus-within {
+            border-color: #ffffff; 
+            background-color: #1f2229;
+        }
+        .okx-input-label { color: #848e9c; font-size: 14px; white-space: nowrap; }
+        .okx-input { 
+            background: transparent; color: #eaecef; width: 100%; 
+            outline: none; text-align: right; font-size: 16px; font-weight: 500; font-family: monospace;
+            padding: 0 10px;
+        }
+        .okx-input-unit { color: #eaecef; font-size: 14px; white-space: nowrap; font-weight: 500; }
         
-        /* Tabs 与 滑动条 */
-        .okx-tab { color: #888; cursor: pointer; padding-bottom: 6px; border-bottom: 2px solid transparent; transition: 0.2s;}
-        .okx-tab.active { color: #fff; border-bottom: 2px solid #fff; font-weight: 600; }
+        /* 按钮颜色 */
+        .btn-buy { background-color: #0ecb81; color: #fff; }
+        .btn-buy:hover { background-color: #0b9e65; }
+        .btn-sell { background-color: #f6465d; color: #fff; }
+        .btn-sell:hover { background-color: #c9384b; }
         
-        input[type=range] { accent-color: #fff; }
+        /* Tabs */
+        .okx-tab { color: #848e9c; cursor: pointer; padding-bottom: 8px; font-size: 15px; font-weight: 500; transition: color 0.2s; }
+        .okx-tab.active { color: #eaecef; border-bottom: 2px solid #eaecef; }
+        .okx-tab:hover:not(.active) { color: #b7bdc6; }
         
-        /* 闪烁动画 */
-        @keyframes flashUp { 0% { color: #00b445; } 100% { color: inherit; } }
-        @keyframes flashDown { 0% { color: #ff3a33; } 100% { color: inherit; } }
-        .flash-up { animation: flashUp 0.8s ease-out; }
-        .flash-down { animation: flashDown 0.8s ease-out; }
-
-        .data-label { color: #888; font-size: 12px; }
-        .data-value { font-family: monospace; font-size: 14px; font-weight: 500; }
+        /* 数据行 */
+        .data-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
+        .data-label { color: #848e9c; }
+        .data-value { color: #eaecef; font-family: monospace; }
         
-        /* 隐藏箭头 */
+        /* 滑块定制 */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; height: 20px; margin-top: 8px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #2b3139; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+            background: #ffffff; margin-top: -6px; cursor: pointer; border: 2px solid #181a20;
+        }
+        
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* 动画 */
+        @keyframes textFlash { 0% { color: #0ecb81; } 100% { color: #eaecef; } }
+        .flash { animation: textFlash 0.5s ease-out; }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 flex justify-center items-start">
+<body class="min-h-screen p-6 md:p-12 flex justify-center items-center">
 
-    <div class="w-full max-w-6xl flex flex-col md:flex-row gap-4">
+    <div class="w-full max-w-[1100px] flex flex-col md:flex-row gap-10 items-center md:items-start">
         
-        <div class="flex-1 bg-panel okx-border rounded-xl flex flex-col overflow-hidden shadow-2xl">
-            <div class="p-5 border-b okx-border flex flex-wrap gap-6 items-center">
-                <div class="flex items-center gap-3">
-                    <select id="instId" class="bg-transparent text-2xl font-bold outline-none cursor-pointer" onchange="switchPair()">
+        <div class="flex-1 w-full flex flex-col pt-4">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="relative group">
+                    <select id="instId" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="switchPair()">
                         <option value="BTC-USDT-SWAP">BTC/USDT 永续</option>
                         <option value="ETH-USDT-SWAP">ETH/USDT 永续</option>
                         <option value="SOL-USDT-SWAP">SOL/USDT 永续</option>
                         <option value="DOGE-USDT-SWAP">DOGE/USDT 永续</option>
                     </select>
-                </div>
-                <div>
-                    <div id="mktPrice" class="text-2xl font-bold font-mono">--</div>
-                    <div id="mktChange" class="text-sm font-medium">--%</div>
-                </div>
-            </div>
-
-            <div class="p-5 grid grid-cols-2 lg:grid-cols-4 gap-6">
-                <div>
-                    <div class="data-label mb-1">24h 最高</div>
-                    <div class="data-value" id="mktHigh">--</div>
-                </div>
-                <div>
-                    <div class="data-label mb-1">24h 最低</div>
-                    <div class="data-value" id="mktLow">--</div>
-                </div>
-                <div>
-                    <div class="data-label mb-1">24h 成交量 (币)</div>
-                    <div class="data-value" id="mktVol">--</div>
-                </div>
-                <div>
-                    <div class="data-label mb-1">合约面值</div>
-                    <div class="data-value" id="mktCtVal">--</div>
-                </div>
-                <div class="col-span-2 lg:col-span-4 border-t okx-border pt-4 mt-2">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="data-label mb-1">资金费率 / 倒计时</div>
-                            <div class="flex items-center gap-2">
-                                <span class="data-value text-orange-400" id="mktFunding">--%</span>
-                                <span class="data-value text-gray-500 text-xs" id="mktCountdown">--:--:--</span>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="data-label mb-1">API 连接状态</div>
-                            <div class="flex items-center justify-end gap-1">
-                                <div id="apiDot" class="w-2 h-2 rounded-full bg-gray-500"></div>
-                                <span id="apiStatus" class="text-xs text-gray-400">Connecting...</span>
-                            </div>
-                        </div>
+                    <div class="text-4xl font-bold flex items-center gap-3 text-white group-hover:text-gray-300 transition-colors">
+                        <span id="displayPair">BTC/USDT 永续</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                 </div>
             </div>
 
-            <div class="flex-1 bg-black/20 m-4 rounded-lg border border-dashed border-[#333] flex items-center justify-center min-h-[200px]">
-                <span class="text-gray-600 text-sm">此区域预留：TradingView K 线图组件</span>
+            <div class="flex items-end gap-6 mb-12">
+                <div id="mktPrice" class="text-[64px] leading-none font-bold font-mono text-[#0ecb81]">--</div>
+                <div id="mktChange" class="text-2xl font-medium text-[#0ecb81] mb-2">--%</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-y-10 gap-x-12 max-w-lg">
+                <div>
+                    <div class="text-[#848e9c] text-base mb-2">24h 最高</div>
+                    <div class="text-2xl font-mono" id="mktHigh">--</div>
+                </div>
+                <div>
+                    <div class="text-[#848e9c] text-base mb-2">24h 最低</div>
+                    <div class="text-2xl font-mono" id="mktLow">--</div>
+                </div>
+                <div>
+                    <div class="text-[#848e9c] text-base mb-2">合约面值</div>
+                    <div class="text-2xl font-mono text-gray-300" id="mktCtVal">1 张 = 0.01 BTC</div>
+                </div>
+                <div>
+                    <div class="text-[#848e9c] text-base mb-2">资金费率</div>
+                    <div class="text-2xl font-mono text-[#fcd535]" id="mktFunding">--%</div>
+                </div>
+                <div class="col-span-2 flex items-center gap-2 mt-4">
+                    <div id="apiDot" class="w-3 h-3 rounded-full bg-gray-500"></div>
+                    <span id="apiStatus" class="text-base text-[#848e9c]">行情连接中...</span>
+                </div>
             </div>
         </div>
 
-        <div class="w-full md:w-[360px] bg-panel okx-border rounded-xl p-4 shadow-2xl flex flex-col shrink-0 relative">
+        <div class="w-full md:w-[420px] okx-panel rounded-xl p-6 shadow-2xl shrink-0">
             
-            <div class="flex justify-between items-center mb-4 pb-3 border-b okx-border">
-                <div class="flex gap-2 text-sm bg-input rounded px-2 py-1 cursor-pointer border okx-border hover:bg-[#262626] transition-colors">
-                    <span class="text-gray-300">逐仓</span>
-                    <span id="levDisplay" class="font-bold text-white">20.00x</span>
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex gap-1 bg-[#2b3139] p-1 rounded-md">
+                    <button class="px-4 py-1.5 text-sm bg-[#474d57] text-white rounded font-medium">逐仓</button>
+                    <button class="px-4 py-1.5 text-sm text-[#848e9c] hover:text-white rounded font-medium">全仓</button>
                 </div>
-                <div class="flex items-center gap-1">
-                    <span class="text-xs text-gray-500">VIP等级</span>
-                    <select id="userLevel" class="bg-transparent text-sm font-medium outline-none text-white cursor-pointer text-right" onchange="calculate()">
-                        <option value="Regular">普通用户</option>
+                
+                <div class="flex flex-col items-end relative group cursor-pointer" onclick="cycleLeverage()">
+                    <div class="bg-[#2b3139] px-3 py-1.5 rounded flex items-center gap-1 hover:bg-[#3b4149] transition-colors">
+                        <span id="levDisplay" class="text-sm font-bold text-white">20.0x</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eaecef" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </div>
+                    <span class="absolute top-10 right-0 text-[10px] text-[#848e9c] opacity-0 group-hover:opacity-100 whitespace-nowrap">点击切换杠杆</span>
+                </div>
+            </div>
+
+            <div class="flex gap-6 mb-6 border-b border-[#2b3139]">
+                <div id="tabLimit" class="okx-tab active" onclick="setOrderType('limit')">限价委托</div>
+                <div id="tabMarket" class="okx-tab" onclick="setOrderType('market')">市价委托</div>
+                
+                <div class="ml-auto self-center pb-2 flex items-center gap-1">
+                    <span class="text-[#848e9c] text-xs">费率</span>
+                    <select id="userLevel" class="bg-transparent text-[#eaecef] text-sm outline-none cursor-pointer" onchange="calculate()">
+                        <option value="Regular">Lv 1</option>
                         <option value="VIP 1">VIP 1</option>
-                        <option value="VIP 2">VIP 2</option>
                         <option value="VIP 3">VIP 3</option>
-                        <option value="VIP 4">VIP 4</option>
                         <option value="VIP 5">VIP 5</option>
-                        <option value="VIP 6">VIP 6</option>
-                        <option value="VIP 7">VIP 7</option>
-                        <option value="VIP 8">VIP 8</option>
                     </select>
                 </div>
             </div>
 
-            <div class="flex gap-4 mb-4 text-sm font-medium">
-                <div id="tabLimit" class="okx-tab active" onclick="setOrderType('limit')">限价委托</div>
-                <div id="tabMarket" class="okx-tab" onclick="setOrderType('market')">市价委托</div>
+            <div class="flex justify-between items-center mb-5 text-[15px]">
+                <span class="text-[#848e9c]">可用</span>
+                <span class="font-mono font-bold text-[#eaecef]" id="availBalance">10,000.00 USDT</span>
             </div>
 
-            <div class="okx-input-group bg-input rounded-md p-2 mb-3 flex items-center justify-between">
-                <input type="number" id="price" class="okx-input text-sm" placeholder="价格" oninput="userManualPrice()">
-                <span class="text-gray-500 text-xs pr-1">USDT</span>
+            <div class="okx-input-wrapper mb-5">
+                <span class="okx-input-label">价格</span>
+                <input type="number" id="price" class="okx-input" value="0" oninput="userManualPrice()">
+                <span class="okx-input-unit ml-3 text-[#848e9c]">USDT</span>
             </div>
 
-            <div class="okx-input-group bg-input rounded-md p-2 mb-3 flex items-center justify-between">
-                <input type="number" id="size" class="okx-input text-sm" placeholder="数量" oninput="manualSizeInput()">
-                <div class="flex items-center gap-1 border-l border-[#444] pl-2 cursor-pointer" onclick="toggleUnit()">
-                    <span id="unitLabel" class="text-gray-400 hover:text-white transition-colors text-xs font-medium w-[40px] text-center">张</span>
-                </div>
-            </div>
-
-            <div class="mb-5 space-y-1">
-                <div class="flex justify-between text-[11px] text-gray-500">
-                    <span>可用余额</span>
-                    <span class="font-mono text-white" id="availBalance">10,000.00 USDT</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="range" id="percentSlider" min="0" max="100" value="0" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer" oninput="slidePercent()">
-                    <span class="text-[10px] text-gray-400 w-8 text-right font-mono" id="percentVal">0%</span>
+            <div class="okx-input-wrapper mb-2 relative">
+                <span class="okx-input-label">数量</span>
+                <input type="number" id="size" class="okx-input pr-14" placeholder="0" oninput="manualSizeInput()">
+                <div class="absolute right-0 top-0 bottom-0 flex items-center border-l border-[#474d57] px-4 cursor-pointer hover:bg-[#3b4149] transition-colors rounded-r" onclick="toggleUnit()">
+                    <span id="unitLabel" class="okx-input-unit">张</span>
                 </div>
             </div>
 
-            <div class="bg-[#1a1a1a] rounded p-3 mb-4 space-y-2 text-xs border okx-border">
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-500 border-b border-dashed border-gray-700 pb-[1px]" title="预计需要冻结的本金">初始保证金</span>
-                    <span class="font-mono text-gray-200" id="resMargin">0.00 USDT</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-500 border-b border-dashed border-gray-700 pb-[1px]" title="开仓产生的手续费 (负数为预计获得返佣)">开仓手续费</span>
-                    <span class="font-mono text-gray-200" id="resFee">0.00 USDT</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-500">预计强平价 (多)</span>
-                    <span class="font-mono text-orange-400" id="resLiq">--</span>
-                </div>
-                <div class="flex justify-between items-center pt-2 mt-1 border-t okx-border">
-                    <span class="text-gray-400">预计总占用金额</span>
-                    <span class="font-mono font-bold text-white text-sm" id="resTotal">0.00 USDT</span>
+            <div class="mb-8 px-1">
+                <input type="range" id="percentSlider" min="0" max="100" value="0" oninput="slidePercent()">
+                <div class="flex justify-between text-[#848e9c] text-xs mt-2 px-1 font-mono">
+                    <span>0%</span>
+                    <span id="percentVal" class="text-white">0%</span>
+                    <span>100%</span>
                 </div>
             </div>
 
-            <div class="flex gap-2 mt-auto">
-                <button onclick="submitOrder('buy')" class="flex-1 bg-up hover-bg-up text-white font-bold py-3 rounded-md text-sm transition-transform active:scale-95 flex flex-col items-center justify-center leading-tight">
-                    <span>买入开多</span>
-                </button>
-                <button onclick="submitOrder('sell')" class="flex-1 bg-down hover-bg-down text-white font-bold py-3 rounded-md text-sm transition-transform active:scale-95 flex flex-col items-center justify-center leading-tight">
-                    <span>卖出开空</span>
-                </button>
+            <div class="mb-6 space-y-3 pt-4 border-t border-[#2b3139]">
+                <div class="data-row">
+                    <span class="data-label">占用保证金</span>
+                    <span class="data-value text-base" id="resMargin">0.00 USDT</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">开仓手续费</span>
+                    <span class="data-value" id="resFee">0.00 USDT</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">预计强平价 (多)</span>
+                    <span class="data-value text-[#fcd535]" id="resLiq">--</span>
+                </div>
+                <div class="data-row mt-3 pt-3 border-t border-[#2b3139]">
+                    <span class="data-label text-[#eaecef] font-medium">总计占用</span>
+                    <span class="data-value text-[#eaecef] text-lg font-bold" id="resTotal">0.00 USDT</span>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="submitOrder('buy')" class="flex-1 btn-buy py-4 rounded font-bold text-base transition-transform active:scale-95">买入开多</button>
+                <button onclick="submitOrder('sell')" class="flex-1 btn-sell py-4 rounded font-bold text-base transition-transform active:scale-95">卖出开空</button>
             </div>
             
         </div>
     </div>
 
     <script>
-        // --- 核心配置数据 ---
         const INSTRUMENTS = {
             "BTC-USDT-SWAP": { baseCcy: "BTC", ctVal: 0.01 },
             "ETH-USDT-SWAP": { baseCcy: "ETH", ctVal: 0.1 },
@@ -198,44 +210,37 @@
             "DOGE-USDT-SWAP": { baseCcy: "DOGE", ctVal: 1000 }
         };
 
-        // 完整的 VIP 费率表 (USDT 本位交割/永续)
         const FEES = {
             "Regular": { maker: 0.00020, taker: 0.00050 },
             "VIP 1":   { maker: 0.00010, taker: 0.00040 },
-            "VIP 2":   { maker: 0.00008, taker: 0.00035 },
             "VIP 3":   { maker: 0.00005, taker: 0.00030 },
-            "VIP 4":   { maker: 0.00000, taker: 0.00025 },
-            "VIP 5":   { maker: -0.00002, taker: 0.00020 },
-            "VIP 6":   { maker: -0.00004, taker: 0.00015 },
-            "VIP 7":   { maker: -0.00006, taker: 0.00012 },
-            "VIP 8":   { maker: -0.00008, taker: 0.00010 }
+            "VIP 5":   { maker: -0.00002, taker: 0.00020 }
         };
 
-        // --- 状态管理 ---
+        const LEV_OPTIONS = [5, 10, 20, 50, 100];
+
         let state = {
-            instId: "BTC-USDT-SWAP",
-            orderType: "limit",
-            unit: "cont", // cont(张) | ccy(币)
-            lev: 20,
-            lastPrice: 0,
-            isManualPrice: false,
-            mockBalance: 10000 // 模拟账户可用余额
+            instId: "BTC-USDT-SWAP", 
+            orderType: "limit", 
+            unit: "cont", 
+            lev: 20, 
+            lastPrice: 0, 
+            isManualPrice: false, 
+            mockBalance: 10000
         };
-
         let ws = null;
 
-        // --- WebSocket 通信 (公共频道) ---
+        // WebSocket 实时数据拉取
         function initWebSocket() {
             if(ws) ws.close();
             ws = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
             
             ws.onopen = () => {
-                document.getElementById('apiDot').classList.replace('bg-gray-500', 'bg-up');
-                document.getElementById('apiDot').style.boxShadow = '0 0 8px #00b445';
+                document.getElementById('apiDot').style.backgroundColor = '#0ecb81';
                 document.getElementById('apiStatus').innerText = "Live";
-                subscribeData();
+                ws.send(JSON.stringify({ op: "subscribe", args: [{ channel: "tickers", instId: state.instId }, { channel: "funding-rate", instId: state.instId }] }));
             };
-
+            
             ws.onmessage = (event) => {
                 if(event.data === 'pong') return;
                 const res = JSON.parse(event.data);
@@ -244,97 +249,72 @@
                     if (res.arg.channel === 'funding-rate') handleFunding(res.data[0]);
                 }
             };
-
+            
             ws.onclose = () => {
-                document.getElementById('apiDot').classList.replace('bg-up', 'bg-red-500');
-                document.getElementById('apiDot').style.boxShadow = 'none';
+                document.getElementById('apiDot').style.backgroundColor = '#f6465d';
                 document.getElementById('apiStatus').innerText = "Reconnecting...";
                 setTimeout(initWebSocket, 3000);
             };
-
-            // 心跳保活
             setInterval(() => { if (ws && ws.readyState === WebSocket.OPEN) ws.send('ping'); }, 20000);
         }
 
-        function subscribeData() {
-            const args = [
-                { channel: "tickers", instId: state.instId },
-                { channel: "funding-rate", instId: state.instId }
-            ];
-            ws.send(JSON.stringify({ op: "subscribe", args: args }));
-        }
-
-        // --- 数据处理与 UI 更新 ---
         function handleTicker(data) {
-            const priceEl = document.getElementById('price');
             const newPrice = parseFloat(data.last);
             const prevPrice = state.lastPrice;
             state.lastPrice = newPrice;
 
-            // 行情看板更新
             const mktPriceEl = document.getElementById('mktPrice');
             mktPriceEl.innerText = newPrice.toFixed(2);
-            mktPriceEl.className = `text-2xl font-bold font-mono ${newPrice >= prevPrice ? 'color-up' : 'color-down'}`;
+            mktPriceEl.style.color = newPrice >= prevPrice ? '#0ecb81' : '#f6465d';
             
-            // 计算 24h 涨跌幅
             const open24h = parseFloat(data.open24h);
             const change = ((newPrice - open24h) / open24h) * 100;
             const changeEl = document.getElementById('mktChange');
             changeEl.innerText = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
-            changeEl.className = `text-sm font-medium ${change >= 0 ? 'color-up' : 'color-down'}`;
+            changeEl.style.color = change >= 0 ? '#0ecb81' : '#f6465d';
 
             document.getElementById('mktHigh').innerText = parseFloat(data.high24h).toFixed(2);
             document.getElementById('mktLow').innerText = parseFloat(data.low24h).toFixed(2);
-            document.getElementById('mktVol').innerText = parseFloat(data.volCcy24h).toLocaleString(undefined, {maximumFractionDigits: 2});
 
-            // 交易面板输入框联动
+            const priceEl = document.getElementById('price');
+            // 如果是市价单，或者用户没有手动改过价格，让输入框价格跟随盘口跳动
             if (state.orderType === 'market' || !state.isManualPrice) {
                 priceEl.value = newPrice;
-                // 仅输入框闪烁动效
-                priceEl.classList.remove('flash-up', 'flash-down');
+                // 触发细微的刷新动画
+                priceEl.classList.remove('flash'); 
                 void priceEl.offsetWidth; 
-                priceEl.classList.add(newPrice >= prevPrice ? 'flash-up' : 'flash-down');
+                priceEl.classList.add('flash');
             }
-            
             calculate();
         }
 
         function handleFunding(data) {
             const rate = parseFloat(data.fundingRate) * 100;
             document.getElementById('mktFunding').innerText = `${rate > 0 ? '+' : ''}${rate.toFixed(4)}%`;
-            
-            // 倒计时简单计算
-            const nextTime = new Date(parseInt(data.nextFundingTime));
-            setInterval(() => {
-                const now = new Date();
-                const diff = nextTime - now;
-                if(diff > 0) {
-                    const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                    document.getElementById('mktCountdown').innerText = `${h}:${m}:${s}`;
-                }
-            }, 1000);
         }
 
-        // --- 用户交互逻辑 ---
+        // --- 交互逻辑 ---
+        
         function switchPair() {
             if(ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ op: "unsubscribe", args: [{ channel: "tickers", instId: state.instId }, { channel: "funding-rate", instId: state.instId }] }));
             }
             state.instId = document.getElementById('instId').value;
+            // 更新显示的大字标题
+            document.getElementById('displayPair').innerText = document.getElementById('instId').options[document.getElementById('instId').selectedIndex].text.split(' ')[0];
             state.isManualPrice = false;
             
             const inst = INSTRUMENTS[state.instId];
             document.getElementById('mktCtVal').innerText = `1 张 = ${inst.ctVal} ${inst.baseCcy}`;
             if (state.unit === 'ccy') document.getElementById('unitLabel').innerText = inst.baseCcy;
             
-            // 重置输入
             document.getElementById('size').value = "";
-            document.getElementById('percentSlider').value = 0;
+            document.getElementById('percentSlider').value = 0; 
             document.getElementById('percentVal').innerText = "0%";
             
-            if(ws && ws.readyState === WebSocket.OPEN) subscribeData();
+            if(ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ op: "subscribe", args: [{ channel: "tickers", instId: state.instId }, { channel: "funding-rate", instId: state.instId }] }));
+            }
         }
 
         function setOrderType(type) {
@@ -370,19 +350,33 @@
             calculate();
         }
 
-        function userManualPrice() {
-            if (state.orderType === 'limit') state.isManualPrice = true;
-            calculate();
+        function cycleLeverage() {
+            // 简单的点击循环切换杠杆逻辑 (替代弹窗体验)
+            let idx = LEV_OPTIONS.indexOf(state.lev);
+            idx = (idx + 1) % LEV_OPTIONS.length;
+            state.lev = LEV_OPTIONS[idx];
+            document.getElementById('levDisplay').innerText = state.lev.toFixed(1) + "x";
+            
+            // 如果用户拉动了滑块，杠杆变动需要重新计算可用开仓量
+            if(parseInt(document.getElementById('percentSlider').value) > 0) {
+                slidePercent();
+            } else {
+                calculate();
+            }
         }
 
-        function manualSizeInput() {
-            // 用户手动输入数量时，取消百分比滑竿的绑定显示
+        function userManualPrice() { 
+            if (state.orderType === 'limit') state.isManualPrice = true; 
+            calculate(); 
+        }
+
+        function manualSizeInput() { 
+            // 手动改数量时，解绑滑块
             document.getElementById('percentSlider').value = 0;
-            document.getElementById('percentVal').innerText = "- %";
-            calculate();
+            document.getElementById('percentVal').innerText = "0%";
+            calculate(); 
         }
 
-        // --- 核心：滑竿买入能力计算 ---
         function slidePercent() {
             const pct = parseInt(document.getElementById('percentSlider').value);
             document.getElementById('percentVal').innerText = `${pct}%`;
@@ -391,17 +385,14 @@
             let calcPrice = parseFloat(document.getElementById('price').value);
             if(isNaN(calcPrice) || calcPrice <= 0) calcPrice = state.lastPrice;
 
-            // 资金利用率计算：打算动用的可用保证金
+            // 打算动用的保证金
             const targetMargin = state.mockBalance * (pct / 100);
             
-            // 考虑手续费损耗，推算最大名义价值 (简化公式以确保不开超)
-            // margin + fee = Notional / lev + Notional * feeRate = Notional * (1/lev + feeRate)
-            // Notional = targetMargin / (1/lev + feeRate)
             const level = document.getElementById('userLevel').value;
             const feeRate = state.orderType === 'market' ? FEES[level].taker : FEES[level].maker;
-            const maxNotional = targetMargin / ((1 / state.lev) + Math.max(0, feeRate));
             
-            // 推算张数
+            // Notional = targetMargin / (1/lev + feeRate)
+            const maxNotional = targetMargin / ((1 / state.lev) + Math.max(0, feeRate));
             const maxConts = Math.floor(maxNotional / (inst.ctVal * calcPrice));
             
             const sizeInput = document.getElementById('size');
@@ -413,7 +404,7 @@
             calculate();
         }
 
-        // --- 核心算力引擎 ---
+        // --- 核心计算引擎 ---
         function calculate() {
             const inst = INSTRUMENTS[state.instId];
             const level = document.getElementById('userLevel').value;
@@ -421,46 +412,39 @@
             if(isNaN(calcPrice) || calcPrice <= 0) calcPrice = 0;
 
             let inputSize = parseFloat(document.getElementById('size').value) || 0;
-            
-            // OKX 底层必须转化为张 (向上取整)
+            // 欧易底层交易统一按照 “张” 处理
             let contNum = state.unit === 'cont' ? Math.floor(inputSize) : Math.ceil(inputSize / inst.ctVal); 
             
             const notional = contNum * inst.ctVal * calcPrice;
 
-            if(notional === 0) {
+            if(notional <= 0) {
                 document.getElementById('resMargin').innerText = "0.00 USDT";
                 document.getElementById('resFee').innerText = "0.00 USDT";
+                document.getElementById('resFee').style.color = "#eaecef";
                 document.getElementById('resTotal').innerText = "0.00 USDT";
                 document.getElementById('resLiq').innerText = "--";
                 return;
             }
 
-            // 1. 保证金
             const margin = notional / state.lev;
-            
-            // 2. 手续费 (如果是负数，代表吃返佣)
             const feeRate = state.orderType === 'market' ? FEES[level].taker : FEES[level].maker;
             const fee = notional * feeRate;
 
-            // 3. 强平估算 (多头举例)
+            // 简化的多头强平预估公式：开仓价 * (1 - 1/杠杆)
             const liqPrice = calcPrice * (1 - (1 / state.lev));
-            
-            // 总占用 (如果 fee 是负数，总占用实际上会少于保证金)
             const total = margin + fee;
 
             document.getElementById('resMargin').innerText = margin.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDT";
             
-            // 手续费展示逻辑优化
             const feeEl = document.getElementById('resFee');
             feeEl.innerText = fee.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}) + " USDT";
-            feeEl.className = `font-mono ${fee < 0 ? 'color-up' : 'text-gray-200'}`; // 负数(赚取)标绿
+            feeEl.style.color = fee < 0 ? '#0ecb81' : '#eaecef';
 
             document.getElementById('resTotal').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDT";
             document.getElementById('resLiq').innerText = liqPrice > 0 ? liqPrice.toFixed(2) + " USDT" : "--";
         }
 
         function submitOrder(side) {
-            const total = document.getElementById('resTotal').innerText;
             const inst = INSTRUMENTS[state.instId];
             let inputSize = parseFloat(document.getElementById('size').value) || 0;
             let contNum = state.unit === 'cont' ? Math.floor(inputSize) : Math.ceil(inputSize / inst.ctVal); 
@@ -470,11 +454,13 @@
                 return;
             }
             
-            console.log(`[Agent Payload] Action: ${side}, Inst: ${state.instId}, Conts: ${contNum}, Price: ${document.getElementById('price').value}`);
-            alert(`✅ 模拟下单成功\n\n方向：${side === 'buy' ? '买入开多' : '卖出开空'}\n数量：${contNum} 张 (${(contNum * inst.ctVal).toFixed(4)} ${inst.baseCcy})\n预估占用：${total}\n\n* 参数已组装，可通过 Agent Trade Kit 签名上链。`);
+            const totalStr = document.getElementById('resTotal').innerText;
+            const actionText = side === 'buy' ? '买入开多' : '卖出开空';
+            
+            alert(`✅ MCP 模拟发单指令\n\n方向：${actionText}\n合约：${state.instId}\n数量：${contNum} 张 (${(contNum * inst.ctVal).toFixed(4)} ${inst.baseCcy})\n预计占用：${totalStr}\n\n* 参数已全部闭环，可传入 Agent Trade Kit。`);
         }
 
-        // 启动
+        // 启动应用
         switchPair();
         initWebSocket();
 
