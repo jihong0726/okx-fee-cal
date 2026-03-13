@@ -3,269 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>欧易计算器 V10.0</title>
+    <title>OKX 专业交易工具箱 V11.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #f5f5f5; color: #1e2329; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .panel-bg { background-color: #ffffff; border: 1px solid #eaecef; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        body { background-color: #f5f5f5; color: #1e2329; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; overflow: hidden; }
+        .panel-bg { background-color: #ffffff; border: 1px solid #eaecef; border-radius: 8px; }
         
-        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #f0f0f0; font-size: 13px; }
-        .info-row:last-child { border-bottom: none; }
+        /* 侧边栏与布局 */
+        .layout-container { display: flex; height: 100vh; padding: 16px; gap: 16px; background-color: #f5f5f5; }
+        .sidebar { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { padding: 12px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: #707a8a; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .nav-item:hover { background-color: #eaecef; color: #1e2329; }
+        .nav-item.active { background-color: #1e2329; color: #ffffff; }
+        .main-content { flex: 1; overflow-y: auto; padding-right: 8px; }
+
+        /* 全局通用组件 */
+        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #f0f0f0; font-size: 13px; }
         .info-label { color: #707a8a; }
         .info-val { color: #1e2329; font-family: monospace; font-weight: 500; text-align: right; }
-        .info-val-large { font-family: monospace; font-size: 24px; font-weight: bold; }
-
-        .sub-tab { font-size: 14px; font-weight: 500; color: #707a8a; cursor: pointer; padding-bottom: 8px; border-bottom: 2px solid transparent; }
-        .sub-tab.active { color: #1e2329; border-bottom: 2px solid #1e2329; font-weight: 600; }
-
-        .okx-input-box { background: #f5f5f5; border: 1px solid transparent; border-radius: 4px; display: flex; align-items: center; transition: 0.2s; }
+        
+        .okx-input-box { background: #f5f5f5; border: 1px solid transparent; border-radius: 4px; display: flex; align-items: center; transition: 0.2s; height: 40px;}
         .okx-input-box:focus-within { border-color: #c9ccd2; background: #ffffff; }
-        .okx-input { background: transparent; width: 100%; border: none; outline: none; padding: 10px 12px; font-size: 15px; color: #1e2329; font-family: monospace; font-weight: 500; }
+        .okx-input { background: transparent; width: 100%; border: none; outline: none; padding: 0 12px; font-size: 14px; color: #1e2329; font-family: monospace; font-weight: 500; }
         .okx-input:disabled { color: #b7bdc6; cursor: not-allowed; }
 
-        .slider-wrapper { position: relative; height: 24px; display: flex; align-items: center; margin-bottom: 8px; }
-        .slider-track-bg { position: absolute; width: 100%; height: 4px; background: #eaecef; border-radius: 2px; z-index: 1; }
-        .slider-marks { position: absolute; width: 100%; height: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 2; pointer-events: none; }
-        .slider-mark { width: 12px; height: 12px; background: white; border: 3px solid #eaecef; border-radius: 50%; }
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; position: absolute; z-index: 3; margin: 0; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: white; border: 5px solid #1e2329; cursor: pointer; transition: transform 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: transparent; cursor: pointer; }
-        .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #b7bdc6; font-family: monospace; padding: 0 2px; }
-
-        .cost-row { display: flex; justify-content: space-between; font-size: 12px; color: #707a8a; margin-top: 8px; }
-        .cost-val { color: #1e2329; font-family: monospace; font-weight: 500;}
-        .text-risk { color: #f6465d; font-weight: bold; }
+        .btn-buy { background: #0ecb81; color: white; transition: 0.2s; }
+        .btn-buy:hover { background: #0b9e65; }
+        .btn-sell { background: #f6465d; color: white; transition: 0.2s; }
+        .btn-sell:hover { background: #c9384b; }
+        
         input[type=number]::-webkit-inner-spin-button { opacity: 1; height: 30px; }
         
-        .modal-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); }
-        .lev-quick-btn { border: 1px solid #eaecef; background: white; color: #1e2329; border-radius: 16px; padding: 4px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; }
-        .lev-quick-btn:hover { background: #f5f5f5; border-color: #c9ccd2; }
-        .lev-quick-btn.active { background: #1e2329; color: white; border-color: #1e2329; }
+        /* 隐藏不同 Tab 内容 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
-<body class="p-4 md:p-8 flex justify-center items-start min-h-screen relative">
+<body>
 
-    <div class="w-full max-w-[950px] flex flex-col md:flex-row gap-6">
+    <div class="layout-container">
         
-        <div class="w-full md:w-[440px] panel-bg p-6 flex flex-col shrink-0">
-            <div class="mb-5 relative">
-                <select id="instId" class="absolute inset-0 opacity-0 cursor-pointer w-full" onchange="switchPair()">
-                    <option value="BTC-USDT-SWAP">BTC-USDT-SWAP</option>
-                    <option value="ETH-USDT-SWAP">ETH-USDT-SWAP</option>
-                    <option value="SOL-USDT-SWAP">SOL-USDT-SWAP</option>
-                    <option value="DOGE-USDT-SWAP">DOGE-USDT-SWAP</option>
-                </select>
-                <div class="text-[26px] font-bold flex items-center gap-2 cursor-pointer hover:text-gray-600">
-                    <span id="displayPairTitle">BTCUSDT 永续</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <div class="text-[#707a8a] text-xs font-bold mb-1">实时最新价</div>
-                <div class="info-val-large text-[#0ecb81]" id="wsLastPrice">--</div>
-            </div>
-
-            <div class="bg-gray-50/50 rounded p-2 mb-4 border border-gray-100">
-                <div class="info-row"><span class="info-label">标记价格</span><span class="info-val" id="wsMarkPrice">--</span></div>
-                <div class="info-row"><span class="info-label">指数价格</span><span class="info-val" id="wsIndexPrice">--</span></div>
-                <div class="info-row"><span class="info-label">24h 最高</span><span class="info-val" id="wsHigh24h">--</span></div>
-                <div class="info-row"><span class="info-label">24h 最低</span><span class="info-val" id="wsLow24h">--</span></div>
-                <div class="info-row"><span class="info-label">24h 成交量</span><span class="info-val" id="wsVol24h">--</span></div>
-                <div class="info-row"><span class="info-label">全网持仓量</span><span class="info-val" id="wsOpenInterest">--</span></div>
-                <div class="info-row"><span class="info-label">合约面值</span><span class="info-val" id="infoCtVal">0.01 BTC</span></div>
-            </div>
-
-            <div class="flex justify-between items-center p-4 rounded-lg border transition-colors mt-auto" id="fundingBox" style="background-color: #f9fafb; border-color: #eaecef;">
-                <div>
-                    <div class="text-[14px] font-bold text-gray-700">当前资金费率</div>
-                    <div class="text-[12px] font-mono font-medium text-gray-500 mt-1 flex items-center gap-1">
-                        ⏱ <span id="wsFundingCountdown">--h --m --s</span>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="mono font-bold text-xl" id="wsFundingRate">--</div>
-                    <div class="text-[12px] font-bold flex items-center justify-end gap-1 mt-1" id="wsFundingDesc">
-                        <span>拉取中...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="w-full md:w-[420px] panel-bg p-6 flex flex-col shrink-0">
+        <div class="sidebar panel-bg p-4">
+            <div class="font-bold text-[18px] mb-6 px-2">OKX Pro Tools</div>
             
-            <div class="flex gap-3 mb-6">
-                <button id="marginModeBtn" class="flex-1 bg-[#f5f5f5] hover:bg-[#eaecef] transition-colors rounded px-3 py-2.5 flex justify-center items-center gap-1 cursor-pointer text-sm font-bold text-[#1e2329]" onclick="toggleMarginMode()">
-                    逐仓 <span class="text-[10px] text-gray-400">▼</span>
-                </button>
-                <button class="flex-1 bg-[#f5f5f5] hover:bg-[#eaecef] transition-colors rounded px-3 py-2.5 flex justify-center items-center gap-1 cursor-pointer text-sm font-bold" onclick="openLevModal()">
-                    <span id="panelLevDisplay" class="text-[#1e2329]">10.00x</span>
-                    <span class="text-[10px] text-gray-400">▼</span>
-                </button>
+            <div class="text-[11px] font-bold text-gray-400 mb-2 px-2 uppercase tracking-wider">核心推演</div>
+            <div class="nav-item active" onclick="switchTab('core')">
+                <span>综合开仓面板</span> <span class="text-[10px] bg-[#0ecb81] text-white px-1.5 py-0.5 rounded">P0</span>
             </div>
-
-            <div class="flex gap-6 mb-5 border-b border-gray-100">
-                <div id="tabLimit" class="sub-tab active" onclick="setOrderType('limit')">限价测算</div>
-                <div id="tabMarket" class="sub-tab" onclick="setOrderType('market')">市价测算</div>
-            </div>
-
-            <div class="text-[12px] text-[#707a8a] mb-1.5 font-medium">开仓价格 (USDT)</div>
-            <div class="okx-input-box mb-4 h-[44px]">
-                <input type="number" id="priceInput" class="okx-input" step="0.1" value="" oninput="userManualPrice()">
-            </div>
-
-            <div class="relative inline-block text-[12px] text-[#707a8a] mb-1.5 font-medium cursor-pointer hover:text-[#1e2329]" onclick="toggleUnitMenu()">
-                开仓数量 (<span id="unitDisplay" class="font-bold underline decoration-dashed">USDT</span>) ▼
-                <div id="unitMenu" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 shadow-lg rounded w-[100px] z-10 py-1">
-                    <div class="px-3 py-2 hover:bg-gray-100 text-black text-sm" onclick="selectUnit('usdt', event)">USDT</div>
-                    <div class="px-3 py-2 hover:bg-gray-100 text-black text-sm" onclick="selectUnit('ccy', event)" id="menuCcy">BTC</div>
-                    <div class="px-3 py-2 hover:bg-gray-100 text-black text-sm" onclick="selectUnit('cont', event)">张</div>
-                </div>
-            </div>
-            <div class="okx-input-box mb-4 h-[44px]">
-                <input type="number" id="sizeInput" class="okx-input" placeholder="输入数量" oninput="manualSize()">
-            </div>
-
-            <div class="mb-6">
-                <div class="slider-wrapper">
-                    <div class="slider-track-bg"></div>
-                    <div class="slider-marks">
-                        <div class="slider-mark"></div><div class="slider-mark"></div><div class="slider-mark"></div><div class="slider-mark"></div><div class="slider-mark"></div>
-                    </div>
-                    <input type="range" id="percentSlider" min="0" max="100" step="1" value="0" oninput="slidePercent()">
-                </div>
-                <div class="slider-labels"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
-            </div>
-
-            <div class="flex items-center justify-between bg-gray-50 p-3 rounded border border-gray-100 mb-2">
-                <span class="text-[13px] text-[#707a8a]">可用本金</span>
-                <span id="availBalance" class="text-[#1e2329] font-mono font-bold cursor-pointer underline decoration-dashed underline-offset-4 text-[15px]" onclick="promptBalance()">10,000.00 USDT</span>
-            </div>
-
-            <div class="flex gap-4 mt-4 border-t border-gray-100 pt-5">
-                <div class="flex-1 bg-[#0ecb81]/5 p-3 rounded-lg border border-[#0ecb81]/20">
-                    <div class="text-[#0ecb81] font-bold text-sm mb-3 text-center">做多 (Long)</div>
-                    <div class="cost-row"><span>总计成本</span><span class="cost-val" id="costLong">--</span></div>
-                    <div class="cost-row"><span>预估强平</span><span class="cost-val text-risk" id="liqLong">--</span></div>
-                </div>
-                <div class="flex-1 bg-[#f6465d]/5 p-3 rounded-lg border border-[#f6465d]/20">
-                    <div class="text-[#f6465d] font-bold text-sm mb-3 text-center">做空 (Short)</div>
-                    <div class="cost-row"><span>总计成本</span><span class="cost-val" id="costShort">--</span></div>
-                    <div class="cost-row"><span>预估强平</span><span class="cost-val text-risk" id="liqShort">--</span></div>
-                </div>
-            </div>
-
-            <div class="mt-6 pt-5 border-t border-gray-200">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-[14px] font-bold text-[#1e2329]">用户等级</span>
-                    <select id="vipLevel" class="text-xs border border-gray-300 rounded px-2 py-1.5 outline-none bg-white cursor-pointer font-medium" onchange="calculate()">
-                        <option value="Regular">普通用户</option>
-                        <option value="VIP 1">VIP 1</option><option value="VIP 2">VIP 2</option>
-                        <option value="VIP 3">VIP 3</option><option value="VIP 4">VIP 4</option>
-                        <option value="VIP 5">VIP 5</option><option value="VIP 6">VIP 6</option>
-                        <option value="VIP 7">VIP 7</option><option value="VIP 8">VIP 8</option>
-                    </select>
-                </div>
-                <div class="flex justify-between text-[13px] text-[#707a8a] mb-2 items-center">
-                    <span>单边手续费 (挂单(Maker) <span id="makerRateText">-0.006%</span>)</span>
-                    <span class="font-mono font-bold text-[#1e2329] text-[14px]" id="makerFeeVal">0.0000 USDT</span>
-                </div>
-                <div class="flex justify-between text-[13px] text-[#707a8a] items-center">
-                    <span>单边手续费 (吃单(Taker) <span id="takerRateText">0.012%</span>)</span>
-                    <span class="font-mono font-bold text-[#1e2329] text-[14px]" id="takerFeeVal">0.0000 USDT</span>
-                </div>
-            </div>
+            
+            <div class="text-[11px] font-bold text-gray-400 mt-6 mb-2 px-2 uppercase tracking-wider">深度与滑点</div>
+            <div class="nav-item" onclick="switchTab('slippage')">盘口滑点测算</div>
+            
+            <div class="text-[11px] font-bold text-gray-400 mt-6 mb-2 px-2 uppercase tracking-wider">成本与趋势</div>
+            <div class="nav-item" onclick="switchTab('funding')">资金费估算器</div>
+            
+            <div class="text-[11px] font-bold text-gray-400 mt-6 mb-2 px-2 uppercase tracking-wider">市场对比</div>
+            <div class="nav-item" onclick="switchTab('market')">全市场机会发现</div>
+            
+            <div class="text-[11px] font-bold text-gray-400 mt-6 mb-2 px-2 uppercase tracking-wider">高级图表</div>
+            <div class="nav-item" onclick="switchTab('chart')">本地 K 线分析</div>
         </div>
-    </div>
 
-    <div id="levModal" class="fixed inset-0 modal-overlay hidden z-50 flex justify-center items-center opacity-0 transition-opacity">
-        <div class="bg-white rounded-xl w-[380px] flex flex-col shadow-2xl transform scale-95 transition-transform" id="levModalContent">
-            <div class="flex justify-between items-center p-5 border-b border-gray-100">
-                <span class="font-bold text-[16px] text-[#1e2329]">调整杠杆</span>
-                <button onclick="closeLevModal()" class="text-gray-400 hover:text-black text-xl leading-none">✕</button>
-            </div>
-            <div class="p-6">
-                <div class="text-sm text-gray-500 mb-2 font-medium">杠杆倍数</div>
-                <div class="flex bg-[#f5f5f5] rounded border border-transparent focus-within:border-[#c9ccd2] focus-within:bg-white p-1 items-center mb-4 transition-colors">
-                    <input type="number" id="modalLevInput" class="bg-transparent flex-1 outline-none text-lg font-mono font-bold px-3 py-1 text-right" oninput="updateModalCalc()">
-                    <span class="text-gray-500 mr-2 font-bold px-2">x</span>
-                    <div class="flex flex-col border-l border-gray-200 pl-2 pr-1">
-                        <button class="text-gray-400 hover:text-black leading-none py-1.5" onclick="stepLev(1)">▲</button>
-                        <button class="text-gray-400 hover:text-black leading-none py-1.5" onclick="stepLev(-1)">▼</button>
+        <div class="main-content">
+            
+            <div class="panel-bg p-4 mb-4 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-4">
+                    <select id="instId" class="text-xl font-bold outline-none cursor-pointer bg-transparent" onchange="switchPair()">
+                        <option value="BTC-USDT-SWAP">BTC-USDT-SWAP</option>
+                        <option value="ETH-USDT-SWAP">ETH-USDT-SWAP</option>
+                        <option value="SOL-USDT-SWAP">SOL-USDT-SWAP</option>
+                        <option value="DOGE-USDT-SWAP">DOGE-USDT-SWAP</option>
+                    </select>
+                    <div class="flex gap-4 border-l border-gray-200 pl-4">
+                        <div class="text-sm"><span class="text-gray-500">最新价</span> <span id="navLastPrice" class="font-mono font-bold text-[#0ecb81]">--</span></div>
+                        <div class="text-sm"><span class="text-gray-500">标记价</span> <span id="navMarkPrice" class="font-mono font-bold">--</span></div>
                     </div>
                 </div>
-                <div class="flex gap-2 mb-6 flex-wrap" id="quickLevBtns">
-                    <button class="lev-quick-btn" onclick="setQuickLev(5)">5x</button>
-                    <button class="lev-quick-btn active" onclick="setQuickLev(10)">10x</button>
-                    <button class="lev-quick-btn" onclick="setQuickLev(20)">20x</button>
-                    <button class="lev-quick-btn" onclick="setQuickLev(50)">50x</button>
-                    <button class="lev-quick-btn" onclick="setQuickLev(100)">100x</button>
-                </div>
-                <div class="text-[13px] text-gray-500 space-y-2 mb-8 bg-gray-50 p-3 rounded">
-                    <div class="flex justify-between"><span>杠杆倍数调整后最大可开</span><span id="modalMaxOpen" class="text-black font-mono font-bold">-- USDT</span></div>
-                    <div class="flex justify-between"><span>所需保证金</span><span id="modalReqMargin" class="text-black font-mono font-bold">0.00 USDT</span></div>
-                </div>
-                <div class="flex gap-3 mt-2">
-                    <button class="flex-1 py-3 bg-white border border-gray-300 hover:bg-gray-50 rounded-full font-bold text-[#1e2329] transition-colors" onclick="closeLevModal()">取消</button>
-                    <button class="flex-1 py-3 bg-[#1e2329] hover:bg-black text-white rounded-full font-bold transition-colors" onclick="confirmLev()">确认</button>
+                <div class="flex items-center gap-2">
+                    <div id="apiDot" class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+                    <span id="apiStatus" class="text-xs text-gray-500">Connecting...</span>
                 </div>
             </div>
+
+            <div id="tab-core" class="tab-content active">
+                <div class="flex gap-4 items-start">
+                    
+                    <div class="w-[360px] panel-bg p-5 flex-shrink-0">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="font-bold text-[15px]">开仓测算</span>
+                            <span class="text-[12px] text-gray-500 cursor-pointer underline decoration-dashed" onclick="promptBalance()">可用: <span id="availBalance" class="font-mono font-bold text-black">10000.00</span> USDT</span>
+                        </div>
+                        
+                        <div class="flex gap-2 mb-4">
+                            <select id="marginMode" class="bg-[#f5f5f5] rounded px-3 py-1.5 outline-none text-sm font-medium w-24 cursor-pointer" onchange="calculateCore()">
+                                <option value="isolated">逐仓</option>
+                                <option value="cross">全仓</option>
+                            </select>
+                            <div class="flex flex-1 bg-[#f5f5f5] rounded px-2 items-center">
+                                <input type="number" id="levInput" value="10" min="1" max="100" class="w-full bg-transparent outline-none text-right font-mono font-bold text-sm" oninput="calculateCore()">
+                                <span class="text-gray-500 ml-1 text-sm font-bold">x</span>
+                            </div>
+                        </div>
+
+                        <div class="text-[12px] text-gray-500 mb-1 flex justify-between">
+                            <span>开仓价格 (USDT)</span>
+                            <span class="text-[#f6465d] text-[10px]" id="priceLimitWarning"></span>
+                        </div>
+                        <div class="okx-input-box mb-4">
+                            <input type="number" id="priceInput" class="okx-input" placeholder="输入价格" oninput="calculateCore()">
+                        </div>
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-4 px-1 -mt-2">
+                            <span>涨停: <span id="limitUp" class="font-mono text-gray-500">--</span></span>
+                            <span>跌停: <span id="limitDown" class="font-mono text-gray-500">--</span></span>
+                        </div>
+
+                        <div class="text-[12px] text-gray-500 mb-1 flex justify-between items-center">
+                            <span>开仓数量</span>
+                            <select id="unitSelect" class="bg-transparent outline-none cursor-pointer font-bold text-black" onchange="calculateCore()">
+                                <option value="usdt">USDT</option>
+                                <option value="cont">张</option>
+                            </select>
+                        </div>
+                        <div class="okx-input-box mb-6">
+                            <input type="number" id="sizeInput" class="okx-input" placeholder="0" oninput="calculateCore()">
+                        </div>
+
+                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 mb-6">
+                            <div class="text-[12px] font-bold mb-2">🎯 目标平仓盈亏模拟</div>
+                            <div class="okx-input-box h-[36px] bg-white border-gray-300">
+                                <input type="number" id="targetPriceInput" class="okx-input" placeholder="输入预期平仓价" oninput="calculateCore()">
+                            </div>
+                            <div class="flex justify-between text-[12px] mt-2">
+                                <span class="text-gray-500">预计盈亏 (做多)</span>
+                                <span class="font-mono font-bold" id="simPnLLong">-- USDT</span>
+                            </div>
+                            <div class="flex justify-between text-[12px] mt-1">
+                                <span class="text-gray-500">预计盈亏 (做空)</span>
+                                <span class="font-mono font-bold" id="simPnLShort">-- USDT</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-100 text-sm">
+                            <span class="text-gray-500">VIP 等级</span>
+                            <select id="vipLevel" class="outline-none bg-transparent font-medium cursor-pointer" onchange="calculateCore()">
+                                <option value="Regular">普通用户</option><option value="VIP 1">VIP 1</option><option value="VIP 2">VIP 2</option><option value="VIP 5">VIP 5</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-4">
+                        
+                        <div class="panel-bg p-5 flex-1 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-[#0ecb81]"></div>
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="font-bold text-[#0ecb81] text-[18px]">做多 (Long) 测算</span>
+                                <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">自动包含手续费损耗</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+                                <div class="info-row border-none p-0"><span class="info-label">初始保证金</span><span class="info-val text-[16px]" id="resMarginLong">0.00 USDT</span></div>
+                                <div class="info-row border-none p-0"><span class="info-label">手续费 (Taker)</span><span class="info-val text-[16px]" id="resFeeLong">0.00 USDT</span></div>
+                                <div class="info-row border-none p-0 col-span-2 pt-2 border-t border-dashed border-gray-200">
+                                    <span class="info-label font-bold text-black">预估强平价</span>
+                                    <span class="font-mono font-bold text-[20px] text-[#f6465d]" id="resLiqLong">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel-bg p-5 flex-1 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-[#f6465d]"></div>
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="font-bold text-[#f6465d] text-[18px]">做空 (Short) 测算</span>
+                                <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">自动包含手续费损耗</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+                                <div class="info-row border-none p-0"><span class="info-label">初始保证金</span><span class="info-val text-[16px]" id="resMarginShort">0.00 USDT</span></div>
+                                <div class="info-row border-none p-0"><span class="info-label">手续费 (Taker)</span><span class="info-val text-[16px]" id="resFeeShort">0.00 USDT</span></div>
+                                <div class="info-row border-none p-0 col-span-2 pt-2 border-t border-dashed border-gray-200">
+                                    <span class="info-label font-bold text-black">预估强平价</span>
+                                    <span class="font-mono font-bold text-[20px] text-[#f6465d]" id="resLiqShort">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-slippage" class="tab-content">
+                <div class="panel-bg p-8 text-center text-gray-500">
+                    <h2 class="text-xl font-bold mb-2 text-black">盘口深度与滑点模拟</h2>
+                    <p>计划接入 <code>books</code> 频道。通过遍历 Orderbook 计算大额开仓的实际成交均价与滑点损耗。</p>
+                    <button class="mt-4 bg-[#1e2329] text-white px-4 py-2 rounded">初始化盘口抓取</button>
+                </div>
+            </div>
+            
+            <div id="tab-funding" class="tab-content">
+                <div class="panel-bg p-8 text-center text-gray-500">
+                    <h2 class="text-xl font-bold mb-2 text-black">资金费率与持仓成本估算</h2>
+                    <p>计划支持输入持仓天数，基于历史与当前资金费率，测算长期持仓的隐含成本。</p>
+                </div>
+            </div>
+
+            <div id="tab-market" class="tab-content">
+                <div class="panel-bg p-8 text-center text-gray-500">
+                    <h2 class="text-xl font-bold mb-2 text-black">全市场概览</h2>
+                    <p>计划接入 <code>tickers</code> 频道全量数据，按资金费率或成交量排序，寻找最优交易标的。</p>
+                </div>
+            </div>
+
+            <div id="tab-chart" class="tab-content">
+                <div class="panel-bg p-8 text-center text-gray-500">
+                    <h2 class="text-xl font-bold mb-2 text-black">高级图表分析</h2>
+                    <p>如果你确认需要，我们可以在此集成本地 K 线渲染模块，并加载移动平均线等指标。</p>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script>
+        // 核心配置 (引入维持保证金率 MMR = 0.4%)
         const INSTRUMENTS = {
-            "BTC-USDT-SWAP": { baseCcy: "BTC", ctVal: 0.01, maxLev: 100 },
-            "ETH-USDT-SWAP": { baseCcy: "ETH", ctVal: 0.1, maxLev: 100 },
-            "SOL-USDT-SWAP": { baseCcy: "SOL", ctVal: 1, maxLev: 50 },
-            "DOGE-USDT-SWAP": { baseCcy: "DOGE", ctVal: 1000, maxLev: 50 }
+            "BTC-USDT-SWAP": { ctVal: 0.01, maxLev: 100 },
+            "ETH-USDT-SWAP": { ctVal: 0.1, maxLev: 100 },
+            "SOL-USDT-SWAP": { ctVal: 1, maxLev: 50 },
+            "DOGE-USDT-SWAP": { ctVal: 1000, maxLev: 50 }
         };
 
         const FEES = {
-            "Regular":{ maker:0.00020, taker:0.00050 }, "VIP 1":{ maker:0.00010, taker:0.00040 },
-            "VIP 2":{ maker:0.00008, taker:0.00035 }, "VIP 3":{ maker:0.00005, taker:0.00030 },
-            "VIP 4":{ maker:0.00000, taker:0.00025 }, "VIP 5":{ maker:-0.00002, taker:0.00020 },
-            "VIP 6":{ maker:-0.00004, taker:0.00015 }, "VIP 7":{ maker:-0.00006, taker:0.00012 },
-            "VIP 8":{ maker:-0.00008, taker:0.00010 }
+            "Regular": { taker: 0.00050 }, "VIP 1": { taker: 0.00040 },
+            "VIP 2": { taker: 0.00035 }, "VIP 5": { taker: 0.00020 }
         };
 
         const MMR = 0.004; 
 
         let state = {
-            instId: "BTC-USDT-SWAP", 
-            orderType: "limit", 
-            marginMode: "isolated", 
-            unit: "usdt", 
-            lev: 10, 
+            instId: "BTC-USDT-SWAP",
             availBalance: 10000.00,
-            isManualPrice: false, 
             lastPrice: 0,
-            nextFundingTime: null
+            limitUp: 0,
+            limitDown: 0,
+            isManualPrice: false
         };
 
         let ws = null;
 
-        // 全局时间循环，独立于 WS 推送，保证每秒刷新
-        setInterval(() => {
-            if (state.nextFundingTime) {
-                const now = new Date().getTime();
-                const diff = state.nextFundingTime - now;
-                if (diff > 0) {
-                    const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                    document.getElementById('wsFundingCountdown').innerText = `${h}h ${m}m ${s}s`;
-                } else {
-                    document.getElementById('wsFundingCountdown').innerText = "结算中...";
-                }
-            }
-        }, 1000);
+        // 导航栏 Tab 切换控制
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
 
+        // WebSocket 管理
         function initWebSocket() {
             if(ws) ws.close();
             ws = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
-            ws.onopen = () => { subscribeData(state.instId); };
+            ws.onopen = () => { 
+                document.getElementById('apiDot').style.backgroundColor = '#0ecb81';
+                document.getElementById('apiStatus').innerText = "Live";
+                subscribeData(state.instId); 
+            };
             ws.onmessage = (event) => {
                 if(event.data === 'pong') return;
                 const res = JSON.parse(event.data);
@@ -273,313 +273,174 @@
                     const ch = res.arg.channel;
                     if (ch === 'tickers') handleTicker(res.data[0]);
                     if (ch === 'mark-price') handleMarkPrice(res.data[0]);
-                    if (ch === 'index-tickers') handleIndexPrice(res.data[0]);
-                    if (ch === 'open-interest') handleOI(res.data[0]);
-                    if (ch === 'funding-rate') handleFundingRate(res.data[0]);
+                    if (ch === 'price-limit') handlePriceLimit(res.data[0]);
                 }
             };
+            ws.onclose = () => { setTimeout(initWebSocket, 3000); };
+            setInterval(() => { if (ws && ws.readyState === WebSocket.OPEN) ws.send('ping'); }, 20000);
         }
 
         function subscribeData(instId) {
-            const indexId = instId.replace('-SWAP', '');
             ws.send(JSON.stringify({ op: "subscribe", args: [
                 { channel: "tickers", instId: instId }, 
                 { channel: "mark-price", instId: instId },
-                { channel: "index-tickers", instId: indexId },
-                { channel: "open-interest", instId: instId },
-                { channel: "funding-rate", instId: instId }
+                { channel: "price-limit", instId: instId }
             ]})); 
         }
 
         function unsubscribeData(instId) {
-            const indexId = instId.replace('-SWAP', '');
             ws.send(JSON.stringify({ op: "unsubscribe", args: [
                 { channel: "tickers", instId: instId }, 
                 { channel: "mark-price", instId: instId },
-                { channel: "index-tickers", instId: indexId },
-                { channel: "open-interest", instId: instId },
-                { channel: "funding-rate", instId: instId }
+                { channel: "price-limit", instId: instId }
             ]})); 
         }
 
+        // 数据处理
         function handleTicker(data) {
             state.lastPrice = parseFloat(data.last);
-            document.getElementById('wsLastPrice').innerText = state.lastPrice.toFixed(5);
-            document.getElementById('wsHigh24h').innerText = parseFloat(data.high24h).toFixed(5);
-            document.getElementById('wsLow24h').innerText = parseFloat(data.low24h).toFixed(5);
-            document.getElementById('wsVol24h').innerText = parseFloat(data.volCcy24h).toLocaleString(undefined, {maximumFractionDigits: 2}) + ` ${INSTRUMENTS[state.instId].baseCcy}`;
+            document.getElementById('navLastPrice').innerText = state.lastPrice.toFixed(4);
             
-            if (state.orderType === 'market') calculate();
-            else if (!state.isManualPrice && document.getElementById('priceInput').value === "") {
-                document.getElementById('priceInput').value = state.lastPrice;
+            const priceInput = document.getElementById('priceInput');
+            if (!state.isManualPrice && priceInput.value === "") {
+                priceInput.value = state.lastPrice;
+                calculateCore();
             }
         }
         
-        function handleMarkPrice(data) { document.getElementById('wsMarkPrice').innerText = "₮ " + parseFloat(data.markPx).toFixed(5); }
-        function handleIndexPrice(data) { document.getElementById('wsIndexPrice').innerText = "₮ " + parseFloat(data.idxPx).toFixed(5); }
-        function handleOI(data) {
-            const oiUsdt = parseFloat(data.oi) * INSTRUMENTS[state.instId].ctVal * state.lastPrice;
-            if(!isNaN(oiUsdt)) document.getElementById('wsOpenInterest').innerText = (oiUsdt / 100000000).toFixed(2) + "亿 USDT";
-        }
-
-        function handleFundingRate(data) {
-            const rate = parseFloat(data.fundingRate);
-            state.nextFundingTime = parseInt(data.nextFundingTime); // 提取绝对时间戳，交给全局定时器处理
-
-            const rateEl = document.getElementById('wsFundingRate');
-            const descEl = document.getElementById('wsFundingDesc');
-            const boxEl = document.getElementById('fundingBox');
-            
-            rateEl.innerText = (rate * 100).toFixed(4) + "%";
-            
-            if (rate > 0) {
-                rateEl.style.color = '#0ecb81'; descEl.style.color = '#0ecb81';
-                boxEl.style.backgroundColor = 'rgba(14,203,129,0.05)'; boxEl.style.borderColor = 'rgba(14,203,129,0.2)';
-                descEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg> 多仓 支付 空仓`;
-            } else if (rate < 0) {
-                rateEl.style.color = '#f6465d'; descEl.style.color = '#f6465d';
-                boxEl.style.backgroundColor = 'rgba(246,70,93,0.05)'; boxEl.style.borderColor = 'rgba(246,70,93,0.2)';
-                descEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="transform: rotate(180deg);"><path d="M5 12h14M12 5l7 7-7 7"/></svg> 空仓 支付 多仓`;
-            }
-        }
-
-        function toggleMarginMode() {
-            state.marginMode = state.marginMode === 'isolated' ? 'cross' : 'isolated';
-            document.getElementById('marginModeBtn').innerHTML = `${state.marginMode === 'isolated' ? '逐仓' : '全仓'} <span class="text-[10px] text-gray-400">▼</span>`;
-            calculate();
-        }
-
-        function openLevModal() {
-            document.getElementById('modalLevInput').value = state.lev;
-            updateModalQuickBtns(); updateModalCalc();
-            const modal = document.getElementById('levModal');
-            const content = document.getElementById('levModalContent');
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
-        }
-
-        function closeLevModal() {
-            const modal = document.getElementById('levModal');
-            const content = document.getElementById('levModalContent');
-            modal.classList.add('opacity-0'); content.classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 200);
-        }
-
-        function stepLev(step) {
-            let val = parseInt(document.getElementById('modalLevInput').value) || 1;
-            val += step;
-            if (val < 1) val = 1;
-            if (val > INSTRUMENTS[state.instId].maxLev) val = INSTRUMENTS[state.instId].maxLev;
-            document.getElementById('modalLevInput').value = val;
-            updateModalQuickBtns(); updateModalCalc();
-        }
-
-        function setQuickLev(val) {
-            if(val > INSTRUMENTS[state.instId].maxLev) val = INSTRUMENTS[state.instId].maxLev;
-            document.getElementById('modalLevInput').value = val;
-            updateModalQuickBtns(); updateModalCalc();
-        }
-
-        function updateModalQuickBtns() {
-            const val = parseInt(document.getElementById('modalLevInput').value);
-            document.querySelectorAll('.lev-quick-btn').forEach(btn => {
-                if(parseInt(btn.innerText) === val) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-        }
-
-        function updateModalCalc() {
-            let val = parseInt(document.getElementById('modalLevInput').value) || 1;
-            if (val > INSTRUMENTS[state.instId].maxLev) val = INSTRUMENTS[state.instId].maxLev;
-            
-            const level = document.getElementById('vipLevel').value;
-            const feeRate = state.orderType === 'market' ? FEES[level].taker : FEES[level].maker;
-            const maxNotional = state.availBalance / ((1 / val) + Math.max(0, feeRate));
-            
-            document.getElementById('modalMaxOpen').innerText = maxNotional.toLocaleString(undefined, {maximumFractionDigits:2}) + " USDT";
-            document.getElementById('modalReqMargin').innerText = (maxNotional / val).toLocaleString(undefined, {maximumFractionDigits:2}) + " USDT";
-        }
-
-        function confirmLev() {
-            let val = parseInt(document.getElementById('modalLevInput').value) || 1;
-            if (val > INSTRUMENTS[state.instId].maxLev) val = INSTRUMENTS[state.instId].maxLev;
-            state.lev = val;
-            document.getElementById('panelLevDisplay').innerText = state.lev.toFixed(2) + "x";
-            closeLevModal();
-            calculate();
-            if(document.getElementById('percentSlider').value > 0) slidePercent();
+        function handleMarkPrice(data) { document.getElementById('navMarkPrice').innerText = parseFloat(data.markPx).toFixed(4); }
+        
+        // 涨跌停接口处理
+        function handlePriceLimit(data) {
+            state.limitUp = parseFloat(data.buyLmt);
+            state.limitDown = parseFloat(data.sellLmt);
+            document.getElementById('limitUp').innerText = state.limitUp.toFixed(4);
+            document.getElementById('limitDown').innerText = state.limitDown.toFixed(4);
+            calculateCore(); // 重新触发测算以验证涨跌停
         }
 
         function switchPair() {
             const oldId = state.instId;
             state.instId = document.getElementById('instId').value;
-            const inst = INSTRUMENTS[state.instId];
             
-            document.getElementById('displayPairTitle').innerText = state.instId.replace('-SWAP', ' 永续').replace('-', '');
-            document.getElementById('infoCtVal').innerText = `${inst.ctVal.toLocaleString()} ${inst.baseCcy}`;
-            document.getElementById('menuCcy').innerText = inst.baseCcy;
-            
-            if(state.lev > inst.maxLev) {
-                state.lev = inst.maxLev;
-                document.getElementById('panelLevDisplay').innerText = state.lev.toFixed(2) + "x";
-            }
-
-            if(state.unit === 'ccy') document.getElementById('unitDisplay').innerText = inst.baseCcy;
+            // 重置输入
             state.isManualPrice = false;
-            if(state.orderType === 'limit') document.getElementById('priceInput').value = "";
+            document.getElementById('priceInput').value = "";
             document.getElementById('sizeInput').value = "";
-            document.getElementById('percentSlider').value = 0;
-
+            document.getElementById('targetPriceInput').value = "";
+            
             if(ws && ws.readyState === WebSocket.OPEN) {
                 unsubscribeData(oldId);
                 subscribeData(state.instId);
             }
-            
-            state.nextFundingTime = null;
-            document.getElementById('wsFundingRate').innerText = "--";
-            document.getElementById('wsFundingDesc').innerHTML = `<span>拉取中...</span>`;
-            document.getElementById('wsFundingCountdown').innerText = "--h --m --s";
-            
-            calculate();
-        }
-
-        function setOrderType(type) {
-            state.orderType = type;
-            document.getElementById('tabLimit').className = `sub-tab ${type === 'limit' ? 'active' : ''}`;
-            document.getElementById('tabMarket').className = `sub-tab ${type === 'market' ? 'active' : ''}`;
-            
-            const priceInput = document.getElementById('priceInput');
-            if (type === 'market') {
-                state.isManualPrice = false;
-                priceInput.type = "text";
-                priceInput.disabled = true;
-                priceInput.value = "市价 (跟随行情)";
-            } else {
-                priceInput.type = "number";
-                priceInput.disabled = false;
-                priceInput.value = state.lastPrice > 0 ? state.lastPrice : "";
-            }
-            calculate();
+            calculateCore();
         }
 
         function promptBalance() {
-            const bal = prompt("输入模拟可用本金 (USDT):", state.availBalance);
+            const bal = prompt("设置可用本金 (USDT):", state.availBalance);
             if(bal !== null && !isNaN(parseFloat(bal)) && parseFloat(bal) > 0) {
                 state.availBalance = parseFloat(bal);
-                document.getElementById('availBalance').innerText = state.availBalance.toLocaleString(undefined, {minimumFractionDigits: 2}) + " USDT";
-                calculate();
-                if(document.getElementById('percentSlider').value > 0) slidePercent();
+                document.getElementById('availBalance').innerText = state.availBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
+                calculateCore();
             }
         }
 
-        function toggleUnitMenu() { document.getElementById('unitMenu').classList.toggle('hidden'); }
-        function selectUnit(unit, e) {
-            e.stopPropagation();
-            state.unit = unit;
+        // 核心测算引擎 (包含 PnL 和 涨跌停校验)
+        function calculateCore() {
             const inst = INSTRUMENTS[state.instId];
-            document.getElementById('unitDisplay').innerText = unit === 'usdt' ? 'USDT' : (unit === 'ccy' ? inst.baseCcy : '张');
-            document.getElementById('unitMenu').classList.add('hidden');
-            document.getElementById('sizeInput').value = "";
-            document.getElementById('percentSlider').value = 0;
-            calculate();
-        }
+            
+            // 获取输入
+            const mode = document.getElementById('marginMode').value; // isolated / cross
+            let lev = parseInt(document.getElementById('levInput').value) || 10;
+            if(lev > inst.maxLev) { lev = inst.maxLev; document.getElementById('levInput').value = lev; }
+            
+            const priceEl = document.getElementById('priceInput');
+            let price = parseFloat(priceEl.value);
+            state.isManualPrice = true;
+            if(isNaN(price) || price <= 0) price = state.lastPrice;
+            
+            // 校验涨跌停
+            const warningEl = document.getElementById('priceLimitWarning');
+            if(price > state.limitUp && state.limitUp > 0) { warningEl.innerText = "价格已超出涨停保护限制"; }
+            else if(price < state.limitDown && state.limitDown > 0) { warningEl.innerText = "价格已跌破跌停保护限制"; }
+            else { warningEl.innerText = ""; }
 
-        function userManualPrice() { state.isManualPrice = true; calculate(); }
-        function manualSize() { document.getElementById('percentSlider').value = 0; calculate(); }
-
-        function slidePercent() {
-            const pct = parseInt(document.getElementById('percentSlider').value);
-            const inst = INSTRUMENTS[state.instId];
-            let calcPrice = state.orderType === 'market' ? state.lastPrice : (parseFloat(document.getElementById('priceInput').value) || state.lastPrice);
-            if(calcPrice <= 0) return;
-
-            const targetMargin = state.availBalance * (pct / 100);
+            const szInput = parseFloat(document.getElementById('sizeInput').value) || 0;
+            const unit = document.getElementById('unitSelect').value;
             const level = document.getElementById('vipLevel').value;
-            const feeRate = state.orderType === 'market' ? FEES[level].taker : FEES[level].maker;
-            
-            const maxNotional = targetMargin / ((1 / state.lev) + Math.max(0, feeRate));
-            
-            let val = 0;
-            if (state.unit === 'usdt') { val = maxNotional; }
-            else if (state.unit === 'ccy') { val = maxNotional / calcPrice; }
-            else if (state.unit === 'cont') { val = Math.floor(maxNotional / (inst.ctVal * calcPrice)); }
+            const takerRate = FEES[level].taker; // 核心测算保守默认按 Taker 算
 
-            document.getElementById('sizeInput').value = val > 0 ? val.toFixed(state.unit==='cont'?0:4) : "";
-            calculate();
-        }
-
-        function calculate() {
-            const inst = INSTRUMENTS[state.instId];
-            const level = document.getElementById('vipLevel').value;
-            
-            let calcPrice = state.orderType === 'market' ? state.lastPrice : (parseFloat(document.getElementById('priceInput').value) || state.lastPrice);
-            let inputSize = parseFloat(document.getElementById('sizeInput').value) || 0;
-            
-            // 提取双边费率
-            const makerRate = FEES[level].maker;
-            const takerRate = FEES[level].taker;
-            
+            // 计算名义价值和币数
             let coins = 0;
             let notional = 0;
-            if(calcPrice > 0) {
-                if (state.unit === 'usdt') { notional = inputSize; coins = notional / calcPrice; }
-                else if (state.unit === 'ccy') { coins = inputSize; notional = coins * calcPrice; }
-                else if (state.unit === 'cont') { coins = inputSize * inst.ctVal; notional = coins * calcPrice; }
+            if (unit === 'usdt') {
+                notional = szInput;
+                coins = price > 0 ? notional / price : 0;
+            } else {
+                coins = szInput * inst.ctVal;
+                notional = coins * price;
             }
 
-            // 计算具体费用
-            const makerFee = notional * makerRate;
-            const takerFee = notional * takerRate;
-
-            // 渲染双边费率与具体 USDT 金额
-            document.getElementById('makerRateText').innerText = `${(makerRate * 100).toFixed(3)}%`;
-            document.getElementById('takerRateText').innerText = `${(takerRate * 100).toFixed(3)}%`;
-
-            const makerFeeEl = document.getElementById('makerFeeVal');
-            makerFeeEl.innerText = makerFee.toFixed(4) + " USDT";
-            makerFeeEl.style.color = makerFee < 0 ? '#0ecb81' : '#1e2329';
-
-            const takerFeeEl = document.getElementById('takerFeeVal');
-            takerFeeEl.innerText = takerFee.toFixed(4) + " USDT";
-            takerFeeEl.style.color = takerFee < 0 ? '#0ecb81' : '#1e2329';
-
-            if (notional <= 0 || calcPrice <= 0 || coins <= 0) {
-                document.getElementById('costLong').innerText = "--"; document.getElementById('costShort').innerText = "--";
-                document.getElementById('liqLong').innerText = "--"; document.getElementById('liqShort').innerText = "--";
+            // 初始化渲染
+            if (notional <= 0 || price <= 0) {
+                document.getElementById('resMarginLong').innerText = "0.00 USDT"; document.getElementById('resFeeLong').innerText = "0.00 USDT";
+                document.getElementById('resMarginShort').innerText = "0.00 USDT"; document.getElementById('resFeeShort').innerText = "0.00 USDT";
+                document.getElementById('resLiqLong').innerText = "--"; document.getElementById('resLiqShort').innerText = "--";
+                document.getElementById('simPnLLong').innerText = "-- USDT"; document.getElementById('simPnLShort').innerText = "-- USDT";
                 return;
             }
 
-            // 根据当前订单类型决定真实占用的成本
-            const activeFee = state.orderType === 'market' ? takerFee : makerFee;
-            const margin = notional / state.lev;
-            const cost = margin + activeFee;
+            // 计算初始指标
+            const initMargin = notional / lev;
+            const fee = notional * takerRate;
             
-            document.getElementById('costLong').innerText = cost.toFixed(2) + " USDT";
-            document.getElementById('costShort').innerText = cost.toFixed(2) + " USDT";
+            document.getElementById('resMarginLong').innerText = initMargin.toFixed(2) + " USDT";
+            document.getElementById('resFeeLong').innerText = fee.toFixed(4) + " USDT";
+            document.getElementById('resMarginShort').innerText = initMargin.toFixed(2) + " USDT";
+            document.getElementById('resFeeShort').innerText = fee.toFixed(4) + " USDT";
 
-            let liqLong = 0;
-            let liqShort = 0;
-
-            if (state.marginMode === 'isolated') {
-                // 维持保证金(MMR) + 吃单费率(被强平时会被按照市价吃单收费)
-                liqLong = calcPrice * (1 - (1/state.lev) + MMR + takerRate);
-                liqShort = calcPrice * (1 + (1/state.lev) - MMR - takerRate);
+            // 强平计算
+            let liqLong = 0, liqShort = 0;
+            if (mode === 'isolated') {
+                liqLong = price * (1 - (1/lev) + MMR + takerRate);
+                liqShort = price * (1 + (1/lev) - MMR - takerRate);
             } else {
-                const effectiveBalance = state.availBalance - activeFee; 
-                liqLong = calcPrice - (effectiveBalance / coins) + (calcPrice * (MMR + takerRate));
-                liqShort = calcPrice + (effectiveBalance / coins) - (calcPrice * (MMR + takerRate));
-                if (liqLong <= 0) liqLong = 0; 
+                const effBal = state.availBalance - fee;
+                liqLong = price - (effBal / coins) + (price * (MMR + takerRate));
+                liqShort = price + (effBal / coins) - (price * (MMR + takerRate));
+                if(liqLong < 0) liqLong = 0;
             }
+            document.getElementById('resLiqLong').innerText = liqLong > 0 ? liqLong.toFixed(4) : "安全";
+            document.getElementById('resLiqShort').innerText = liqShort.toFixed(4);
 
-            document.getElementById('liqLong').innerText = liqLong > 0 ? liqLong.toFixed(5) : "安全 (0.00)";
-            document.getElementById('liqShort').innerText = liqShort.toFixed(5);
+            // PnL 盈亏模拟计算
+            const targetPrice = parseFloat(document.getElementById('targetPriceInput').value);
+            const pnlLongEl = document.getElementById('simPnLLong');
+            const pnlShortEl = document.getElementById('simPnLShort');
+            
+            if(!isNaN(targetPrice) && targetPrice > 0) {
+                // 净利润 = (平仓价 - 开仓价) * 数量 - 双边手续费
+                const closeFee = targetPrice * coins * takerRate; // 假设平仓也是吃单
+                const totalFee = fee + closeFee;
+                
+                const pnlLong = (targetPrice - price) * coins - totalFee;
+                const pnlShort = (price - targetPrice) * coins - totalFee;
+                
+                const roiLong = (pnlLong / initMargin) * 100;
+                const roiShort = (pnlShort / initMargin) * 100;
+
+                pnlLongEl.innerText = `${pnlLong > 0 ? '+' : ''}${pnlLong.toFixed(2)} USDT (${roiLong.toFixed(2)}%)`;
+                pnlLongEl.style.color = pnlLong > 0 ? '#0ecb81' : (pnlLong < 0 ? '#f6465d' : '#1e2329');
+                
+                pnlShortEl.innerText = `${pnlShort > 0 ? '+' : ''}${pnlShort.toFixed(2)} USDT (${roiShort.toFixed(2)}%)`;
+                pnlShortEl.style.color = pnlShort > 0 ? '#0ecb81' : (pnlShort < 0 ? '#f6465d' : '#1e2329');
+            } else {
+                pnlLongEl.innerText = "-- USDT"; pnlLongEl.style.color = '#1e2329';
+                pnlShortEl.innerText = "-- USDT"; pnlShortEl.style.color = '#1e2329';
+            }
         }
 
-        document.addEventListener('click', (e) => {
-            if(!e.target.closest('.inline-block')) document.getElementById('unitMenu').classList.add('hidden');
-        });
-        
-        switchPair();
+        // 启动
         initWebSocket();
     </script>
 </body>
