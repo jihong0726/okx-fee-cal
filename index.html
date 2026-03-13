@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>欧易计算器 V9.0</title>
+    <title>欧易计算器 V10.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f5f5f5; color: #1e2329; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -23,7 +23,6 @@
         .okx-input { background: transparent; width: 100%; border: none; outline: none; padding: 10px 12px; font-size: 15px; color: #1e2329; font-family: monospace; font-weight: 500; }
         .okx-input:disabled { color: #b7bdc6; cursor: not-allowed; }
 
-        /* 修复滑块 */
         .slider-wrapper { position: relative; height: 24px; display: flex; align-items: center; margin-bottom: 8px; }
         .slider-track-bg { position: absolute; width: 100%; height: 4px; background: #eaecef; border-radius: 2px; z-index: 1; }
         .slider-marks { position: absolute; width: 100%; height: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 2; pointer-events: none; }
@@ -34,16 +33,11 @@
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: transparent; cursor: pointer; }
         .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #b7bdc6; font-family: monospace; padding: 0 2px; }
 
-        .btn-buy { background: #0ecb81; color: white; transition: 0.2s; }
-        .btn-buy:hover { background: #0b9e65; }
-        .btn-sell { background: #f6465d; color: white; transition: 0.2s; }
-        .btn-sell:hover { background: #c9384b; }
         .cost-row { display: flex; justify-content: space-between; font-size: 12px; color: #707a8a; margin-top: 8px; }
         .cost-val { color: #1e2329; font-family: monospace; font-weight: 500;}
         .text-risk { color: #f6465d; font-weight: bold; }
         input[type=number]::-webkit-inner-spin-button { opacity: 1; height: 30px; }
         
-        /* 弹窗样式 */
         .modal-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); }
         .lev-quick-btn { border: 1px solid #eaecef; background: white; color: #1e2329; border-radius: 16px; padding: 4px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; }
         .lev-quick-btn:hover { background: #f5f5f5; border-color: #c9ccd2; }
@@ -173,9 +167,13 @@
                         <option value="VIP 7">VIP 7</option><option value="VIP 8">VIP 8</option>
                     </select>
                 </div>
-                <div class="flex justify-between text-xs text-[#707a8a]">
-                    <span>单边手续费 (<span id="feeRateText" class="font-bold text-[#1e2329]">挂单 0.02%</span>)</span>
-                    <span class="font-mono font-bold text-[#1e2329]" id="detailFee">0.00 USDT</span>
+                <div class="flex justify-between text-[13px] text-[#707a8a] mb-2 items-center">
+                    <span>单边手续费 (挂单(Maker) <span id="makerRateText">-0.006%</span>)</span>
+                    <span class="font-mono font-bold text-[#1e2329] text-[14px]" id="makerFeeVal">0.0000 USDT</span>
+                </div>
+                <div class="flex justify-between text-[13px] text-[#707a8a] items-center">
+                    <span>单边手续费 (吃单(Taker) <span id="takerRateText">0.012%</span>)</span>
+                    <span class="font-mono font-bold text-[#1e2329] text-[14px]" id="takerFeeVal">0.0000 USDT</span>
                 </div>
             </div>
         </div>
@@ -242,11 +240,27 @@
             lev: 10, 
             availBalance: 10000.00,
             isManualPrice: false, 
-            lastPrice: 0
+            lastPrice: 0,
+            nextFundingTime: null
         };
 
         let ws = null;
-        let fundingTimer = null;
+
+        // 全局时间循环，独立于 WS 推送，保证每秒刷新
+        setInterval(() => {
+            if (state.nextFundingTime) {
+                const now = new Date().getTime();
+                const diff = state.nextFundingTime - now;
+                if (diff > 0) {
+                    const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                    document.getElementById('wsFundingCountdown').innerText = `${h}h ${m}m ${s}s`;
+                } else {
+                    document.getElementById('wsFundingCountdown').innerText = "结算中...";
+                }
+            }
+        }, 1000);
 
         function initWebSocket() {
             if(ws) ws.close();
@@ -303,17 +317,15 @@
         
         function handleMarkPrice(data) { document.getElementById('wsMarkPrice').innerText = "₮ " + parseFloat(data.markPx).toFixed(5); }
         function handleIndexPrice(data) { document.getElementById('wsIndexPrice').innerText = "₮ " + parseFloat(data.idxPx).toFixed(5); }
-        
         function handleOI(data) {
-            // 将张数转化为近似美金价值
             const oiUsdt = parseFloat(data.oi) * INSTRUMENTS[state.instId].ctVal * state.lastPrice;
-            if(!isNaN(oiUsdt)) {
-                document.getElementById('wsOpenInterest').innerText = (oiUsdt / 100000000).toFixed(2) + "亿 USDT";
-            }
+            if(!isNaN(oiUsdt)) document.getElementById('wsOpenInterest').innerText = (oiUsdt / 100000000).toFixed(2) + "亿 USDT";
         }
 
         function handleFundingRate(data) {
             const rate = parseFloat(data.fundingRate);
+            state.nextFundingTime = parseInt(data.nextFundingTime); // 提取绝对时间戳，交给全局定时器处理
+
             const rateEl = document.getElementById('wsFundingRate');
             const descEl = document.getElementById('wsFundingDesc');
             const boxEl = document.getElementById('fundingBox');
@@ -329,22 +341,6 @@
                 boxEl.style.backgroundColor = 'rgba(246,70,93,0.05)'; boxEl.style.borderColor = 'rgba(246,70,93,0.2)';
                 descEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="transform: rotate(180deg);"><path d="M5 12h14M12 5l7 7-7 7"/></svg> 空仓 支付 多仓`;
             }
-
-            // 资金费率倒计时计算
-            const nextTime = parseInt(data.nextFundingTime);
-            if(fundingTimer) clearInterval(fundingTimer);
-            fundingTimer = setInterval(() => {
-                const now = new Date().getTime();
-                const diff = nextTime - now;
-                if(diff > 0) {
-                    const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                    document.getElementById('wsFundingCountdown').innerText = `${h}h ${m}m ${s}s`;
-                } else {
-                    document.getElementById('wsFundingCountdown').innerText = "结算中...";
-                }
-            }, 1000);
         }
 
         function toggleMarginMode() {
@@ -353,7 +349,6 @@
             calculate();
         }
 
-        // --- 杠杆弹窗逻辑 ---
         function openLevModal() {
             document.getElementById('modalLevInput').value = state.lev;
             updateModalQuickBtns(); updateModalCalc();
@@ -440,12 +435,9 @@
                 subscribeData(state.instId);
             }
             
-            // 数据重置占位
+            state.nextFundingTime = null;
             document.getElementById('wsFundingRate').innerText = "--";
             document.getElementById('wsFundingDesc').innerHTML = `<span>拉取中...</span>`;
-            document.getElementById('wsIndexPrice').innerText = "--";
-            document.getElementById('wsOpenInterest').innerText = "--";
-            if(fundingTimer) clearInterval(fundingTimer);
             document.getElementById('wsFundingCountdown').innerText = "--h --m --s";
             
             calculate();
@@ -523,8 +515,9 @@
             let calcPrice = state.orderType === 'market' ? state.lastPrice : (parseFloat(document.getElementById('priceInput').value) || state.lastPrice);
             let inputSize = parseFloat(document.getElementById('sizeInput').value) || 0;
             
-            const feeRate = state.orderType === 'market' ? FEES[level].taker : FEES[level].maker;
-            const feeTypeStr = state.orderType === 'market' ? '吃单(Taker)' : '挂单(Maker)';
+            // 提取双边费率
+            const makerRate = FEES[level].maker;
+            const takerRate = FEES[level].taker;
             
             let coins = 0;
             let notional = 0;
@@ -534,9 +527,21 @@
                 else if (state.unit === 'cont') { coins = inputSize * inst.ctVal; notional = coins * calcPrice; }
             }
 
-            const fee = notional * feeRate;
-            document.getElementById('feeRateText').innerText = `${feeTypeStr} ${(feeRate * 100).toFixed(3)}%`;
-            document.getElementById('detailFee').innerText = fee.toFixed(4) + " USDT";
+            // 计算具体费用
+            const makerFee = notional * makerRate;
+            const takerFee = notional * takerRate;
+
+            // 渲染双边费率与具体 USDT 金额
+            document.getElementById('makerRateText').innerText = `${(makerRate * 100).toFixed(3)}%`;
+            document.getElementById('takerRateText').innerText = `${(takerRate * 100).toFixed(3)}%`;
+
+            const makerFeeEl = document.getElementById('makerFeeVal');
+            makerFeeEl.innerText = makerFee.toFixed(4) + " USDT";
+            makerFeeEl.style.color = makerFee < 0 ? '#0ecb81' : '#1e2329';
+
+            const takerFeeEl = document.getElementById('takerFeeVal');
+            takerFeeEl.innerText = takerFee.toFixed(4) + " USDT";
+            takerFeeEl.style.color = takerFee < 0 ? '#0ecb81' : '#1e2329';
 
             if (notional <= 0 || calcPrice <= 0 || coins <= 0) {
                 document.getElementById('costLong').innerText = "--"; document.getElementById('costShort').innerText = "--";
@@ -544,8 +549,11 @@
                 return;
             }
 
+            // 根据当前订单类型决定真实占用的成本
+            const activeFee = state.orderType === 'market' ? takerFee : makerFee;
             const margin = notional / state.lev;
-            const cost = margin + fee;
+            const cost = margin + activeFee;
+            
             document.getElementById('costLong').innerText = cost.toFixed(2) + " USDT";
             document.getElementById('costShort').innerText = cost.toFixed(2) + " USDT";
 
@@ -553,12 +561,13 @@
             let liqShort = 0;
 
             if (state.marginMode === 'isolated') {
-                liqLong = calcPrice * (1 - (1/state.lev) + MMR + feeRate);
-                liqShort = calcPrice * (1 + (1/state.lev) - MMR - feeRate);
+                // 维持保证金(MMR) + 吃单费率(被强平时会被按照市价吃单收费)
+                liqLong = calcPrice * (1 - (1/state.lev) + MMR + takerRate);
+                liqShort = calcPrice * (1 + (1/state.lev) - MMR - takerRate);
             } else {
-                const effectiveBalance = state.availBalance - fee; 
-                liqLong = calcPrice - (effectiveBalance / coins) + (calcPrice * MMR);
-                liqShort = calcPrice + (effectiveBalance / coins) - (calcPrice * MMR);
+                const effectiveBalance = state.availBalance - activeFee; 
+                liqLong = calcPrice - (effectiveBalance / coins) + (calcPrice * (MMR + takerRate));
+                liqShort = calcPrice + (effectiveBalance / coins) - (calcPrice * (MMR + takerRate));
                 if (liqLong <= 0) liqLong = 0; 
             }
 
