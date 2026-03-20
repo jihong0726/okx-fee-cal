@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OKX 专业交易工具箱 V11.1</title>
+    <title>OKX 专业交易工具箱 V11.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f5f5f5; color: #1e2329; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; overflow: hidden; }
@@ -52,9 +52,6 @@
             <div class="text-[11px] font-bold text-gray-400 mt-6 mb-2 px-2 uppercase tracking-wider">成本与趋势</div>
             <div class="nav-item" onclick="switchTab('funding')">资金费估算器</div>
             
-            <div class="text-[11px] font-bold text-gray-400 mt-6 mb-2 px-2 uppercase tracking-wider">市场对比</div>
-            <div class="nav-item" onclick="switchTab('market')">全市场机会发现</div>
-            
             <div class="text-[11px] font-bold text-gray-400 mt-6 mb-2 px-2 uppercase tracking-wider">高级图表</div>
             <div class="nav-item" onclick="switchTab('chart')">本地 K 线分析</div>
         </div>
@@ -97,7 +94,7 @@
                                 <option value="cross">全仓</option>
                             </select>
                             <div class="flex flex-1 bg-[#f5f5f5] rounded px-2 items-center border border-transparent focus-within:border-gray-300 transition-colors">
-                                <input type="number" id="levInput" value="10" min="1" max="100" class="w-full bg-transparent outline-none text-right font-mono font-bold text-sm text-[#1e2329]" oninput="calculateCore()">
+                                <input type="number" id="levInput" value="10" min="1" max="125" class="w-full bg-transparent outline-none text-right font-mono font-bold text-sm text-[#1e2329]" oninput="calculateCore()">
                                 <span class="text-gray-500 ml-1 text-sm font-bold">x</span>
                             </div>
                         </div>
@@ -133,23 +130,32 @@
                                 <input type="number" id="targetPriceInput" class="okx-input" placeholder="输入预期平仓价" oninput="calculateCore()">
                             </div>
                             <div class="flex justify-between text-[12px] mt-3">
-                                <span class="text-gray-500 font-medium">预计盈亏 (做多)</span>
+                                <span class="text-gray-500 font-medium">预计净盈亏 (做多)</span>
                                 <span class="font-mono font-bold text-gray-400" id="simPnLLong">--</span>
                             </div>
                             <div class="flex justify-between text-[12px] mt-1">
-                                <span class="text-gray-500 font-medium">预计盈亏 (做空)</span>
+                                <span class="text-gray-500 font-medium">预计净盈亏 (做空)</span>
                                 <span class="font-mono font-bold text-gray-400" id="simPnLShort">--</span>
                             </div>
                         </div>
 
-                        <div class="flex justify-between items-center pt-3 border-t border-gray-100 text-sm">
-                            <span class="text-gray-500 font-medium">当前 VIP 费率等级</span>
-                            <select id="vipLevel" class="outline-none bg-transparent font-bold cursor-pointer text-[#1e2329]" onchange="calculateCore()">
-                                <option value="Regular">普通用户</option>
-                                <option value="VIP 1">VIP 1</option>
-                                <option value="VIP 2">VIP 2</option>
-                                <option value="VIP 5">VIP 5</option>
-                            </select>
+                        <div class="flex flex-col gap-2 pt-3 border-t border-gray-100 text-sm">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500 font-medium">当前 VIP 费率等级</span>
+                                <select id="vipLevel" class="outline-none bg-transparent font-bold cursor-pointer text-[#1e2329] text-right" onchange="calculateCore()">
+                                    <option value="Regular">普通用户 (0.05%)</option>
+                                    <option value="VIP 1">VIP 1 (0.04%)</option>
+                                    <option value="VIP 2">VIP 2 (0.035%)</option>
+                                    <option value="VIP 5">VIP 5 (0.02%)</option>
+                                </select>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-gray-500 font-medium flex items-center gap-1">
+                                    真实维持保证金率 (MMR)
+                                    <span title="已接入 OKX 真实接口，根据你的仓位大小动态跳档" class="cursor-help text-xs bg-gray-200 text-gray-500 rounded-full w-4 h-4 flex items-center justify-center">?</span>
+                                </span>
+                                <span id="displayMmr" class="font-mono font-bold text-[#f6465d]">拉取中...</span>
+                            </div>
                         </div>
                     </div>
 
@@ -193,19 +199,20 @@
 
             <div id="tab-slippage" class="tab-content"><div class="panel-bg p-8 text-center text-gray-500"><h2>滑点测算模块开发中...</h2></div></div>
             <div id="tab-funding" class="tab-content"><div class="panel-bg p-8 text-center text-gray-500"><h2>资金费率模块开发中...</h2></div></div>
-            <div id="tab-market" class="tab-content"><div class="panel-bg p-8 text-center text-gray-500"><h2>全市场机会模块开发中...</h2></div></div>
             <div id="tab-chart" class="tab-content"><div class="panel-bg p-8 text-center text-gray-500"><h2>K线图表模块开发中...</h2></div></div>
 
         </div>
     </div>
 
     <script>
-        // 核心配置字典 (修复硬编码 MMR，支持精确合约面值)
+        // ==========================================
+        // ⚙️ 基础配置区 (仅保留合约面值与最大杠杆)
+        // ==========================================
         const INSTRUMENTS = {
-            "BTC-USDT-SWAP": { ctVal: 0.01, maxLev: 100, mmr: 0.004 },
-            "ETH-USDT-SWAP": { ctVal: 0.1, maxLev: 100, mmr: 0.004 },
-            "SOL-USDT-SWAP": { ctVal: 1, maxLev: 50, mmr: 0.010 },
-            "DOGE-USDT-SWAP": { ctVal: 1000, maxLev: 50, mmr: 0.010 }
+            "BTC-USDT-SWAP": { ctVal: 0.01, maxLev: 125 },
+            "ETH-USDT-SWAP": { ctVal: 0.1, maxLev: 100 },
+            "SOL-USDT-SWAP": { ctVal: 1, maxLev: 50 },
+            "DOGE-USDT-SWAP": { ctVal: 1000, maxLev: 50 }
         };
 
         const FEES = {
@@ -224,6 +231,7 @@
 
         let ws = null;
 
+        // 导航栏 Tab 切换控制
         function switchTab(tabId) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
@@ -231,7 +239,64 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
-        // WebSocket 管理
+        // ==========================================
+        // 📡 核心增强：异步拉取真实阶梯 MMR 规则
+        // ==========================================
+        let mmrTiersCache = {}; // 全局缓存池
+
+        async function fetchRealMMRTiers(instId) {
+            // 如果缓存里已经有了，直接返回
+            if (mmrTiersCache[instId]) {
+                calculateCore(); return;
+            }
+
+            try {
+                document.getElementById('displayMmr').innerText = "拉取中...";
+                document.getElementById('displayMmr').style.color = "#707a8a";
+
+                // 使用 allorigins 作为纯前端的免费跨域代理
+                const targetUrl = encodeURIComponent(`https://www.okx.com/api/v5/public/tier?instType=SWAP&instId=${instId}&tdMode=cross`);
+                const proxyUrl = `https://api.allorigins.win/get?url=${targetUrl}`;
+
+                const response = await fetch(proxyUrl);
+                const result = await response.json();
+                
+                // 解析包装在 contents 里的真实 OKX JSON
+                const okxData = JSON.parse(result.contents);
+
+                if (okxData.code === "0" && okxData.data) {
+                    mmrTiersCache[instId] = okxData.data;
+                    console.log(`✅ [${instId}] 真实 MMR 阶梯规则已加载:`, okxData.data);
+                    calculateCore(); // 数据到达后，主动重算一次
+                }
+            } catch (error) {
+                console.error(`❌ [${instId}] MMR 规则拉取失败:`, error);
+                document.getElementById('displayMmr').innerText = "拉取失败 (回退默认)";
+            }
+        }
+
+        // 动态匹配 MMR 函数
+        function getDynamicMMR(instId, szInCont) {
+            const tiers = mmrTiersCache[instId];
+            
+            // 如果没拉到数据，给个安全的默认值保底
+            if (!tiers || tiers.length === 0) return 0.004; 
+
+            for (let i = 0; i < tiers.length; i++) {
+                const min = parseFloat(tiers[i].minSz);
+                const max = parseFloat(tiers[i].maxSz);
+                // 根据用户的持仓张数，落入哪个区间就用哪个 MMR
+                if (szInCont >= min && szInCont <= max) {
+                    return parseFloat(tiers[i].mgnRatio);
+                }
+            }
+            // 超出极值，取最大档
+            return parseFloat(tiers[tiers.length - 1].mgnRatio);
+        }
+
+        // ==========================================
+        // 🔌 WebSocket 行情管理
+        // ==========================================
         function initWebSocket() {
             if(ws) ws.close();
             document.getElementById('apiStatus').innerText = "Connecting...";
@@ -253,7 +318,7 @@
                         if (ch === 'mark-price') handleMarkPrice(res.data[0]);
                         if (ch === 'price-limit') handlePriceLimit(res.data[0]);
                     }
-                } catch(e) { console.error("WS Parse Error", e); }
+                } catch(e) {}
             };
             ws.onclose = () => { 
                 document.getElementById('apiDot').style.backgroundColor = '#f6465d';
@@ -279,7 +344,6 @@
             ]})); 
         }
 
-        // 数据处理
         function handleTicker(data) {
             state.lastPrice = parseFloat(data.last);
             document.getElementById('navLastPrice').innerText = state.lastPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6});
@@ -303,15 +367,16 @@
             calculateCore(); 
         }
 
+        // ==========================================
+        // 🎛️ 交互与核心计算逻辑
+        // ==========================================
         function switchPair() {
             const oldId = state.instId;
             state.instId = document.getElementById('instId').value;
             
-            // 切换币种时重置底层状态，防止计算串仓
+            // 防串仓：重置底层状态
             state.isManualPrice = false;
-            state.lastPrice = 0;
-            state.limitUp = 0;
-            state.limitDown = 0;
+            state.lastPrice = 0; state.limitUp = 0; state.limitDown = 0;
             
             document.getElementById('navLastPrice').innerText = "--";
             document.getElementById('navMarkPrice').innerText = "--";
@@ -320,9 +385,11 @@
             document.getElementById('limitDown').innerText = "--";
             
             if(ws && ws.readyState === WebSocket.OPEN) {
-                unsubscribeData(oldId);
-                subscribeData(state.instId);
+                unsubscribeData(oldId); subscribeData(state.instId);
             }
+            
+            // 🌟 触发异步拉取新币种的 MMR 规则
+            fetchRealMMRTiers(state.instId);
             calculateCore();
         }
 
@@ -335,12 +402,9 @@
             }
         }
 
-        // 核心测算引擎
         function calculateCore() {
             const inst = INSTRUMENTS[state.instId];
             if (!inst) return;
-            
-            const mmr = inst.mmr; // 获取对应币种的精准维持保证金率
             
             const mode = document.getElementById('marginMode').value;
             let lev = parseInt(document.getElementById('levInput').value) || 10;
@@ -350,11 +414,7 @@
             const priceEl = document.getElementById('priceInput');
             let price = parseFloat(priceEl.value);
             
-            // 判定是否是用户手动改价
-            if (document.activeElement === priceEl) {
-                state.isManualPrice = true;
-            }
-
+            if (document.activeElement === priceEl) state.isManualPrice = true;
             if(isNaN(price) || price <= 0) price = state.lastPrice;
             
             // 校验涨跌停保护线
@@ -368,16 +428,23 @@
             const level = document.getElementById('vipLevel').value;
             const takerRate = FEES[level].taker;
 
-            // 统一计算真实名义价值(Notional)和持仓币数(Coins)
-            let coins = 0;
-            let notional = 0;
+            // ★ 核心转换：统一算出张数 (szInCont) 以匹配 OKX 规则
+            let coins = 0, notional = 0, szInCont = 0;
             if (unit === 'usdt') {
                 notional = szInput;
                 coins = price > 0 ? notional / price : 0;
+                szInCont = coins / inst.ctVal; 
             } else {
-                coins = szInput * inst.ctVal;
+                szInCont = szInput;
+                coins = szInCont * inst.ctVal;
                 notional = coins * price;
             }
+
+            // ★ 获取动态 MMR 并更新 UI
+            const realMMR = getDynamicMMR(state.instId, szInCont);
+            const mmrDisplayEl = document.getElementById('displayMmr');
+            mmrDisplayEl.innerText = (realMMR * 100).toFixed(2) + "%";
+            mmrDisplayEl.style.color = realMMR > 0.01 ? '#f6465d' : '#0ecb81'; // 超过1%标红警告
 
             // 数据容错处理
             if (notional <= 0 || price <= 0 || isNaN(notional)) {
@@ -397,18 +464,17 @@
             document.getElementById('resMarginShort').innerText = initMargin.toLocaleString(undefined, {minimumFractionDigits: 2}) + " USDT";
             document.getElementById('resFeeShort').innerText = fee.toLocaleString(undefined, {minimumFractionDigits: 4}) + " USDT";
 
-            // 强平价精密计算
+            // ★ 强平价精密计算 (应用 realMMR)
             let liqLong = 0, liqShort = 0;
             if (mode === 'isolated') {
-                liqLong = price * (1 - (1/lev) + mmr + takerRate);
-                liqShort = price * (1 + (1/lev) - mmr - takerRate);
+                liqLong = price * (1 - (1/lev) + realMMR + takerRate);
+                liqShort = price * (1 + (1/lev) - realMMR - takerRate);
             } else {
                 const effBal = state.availBalance - fee;
-                liqLong = price - (effBal / coins) + (price * (mmr + takerRate));
-                liqShort = price + (effBal / coins) - (price * (mmr + takerRate));
+                liqLong = price - (effBal / coins) + (price * (realMMR + takerRate));
+                liqShort = price + (effBal / coins) - (price * (realMMR + takerRate));
             }
             
-            // 安全线规避负数
             if(liqLong < 0) liqLong = 0;
             if(liqShort < 0) liqShort = 0;
 
@@ -444,9 +510,13 @@
             }
         }
 
-        // 初始化
+        // 启动
         initWebSocket();
         document.getElementById('availBalance').innerText = state.availBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
+        
+        // 网页初次加载时拉取默认币种的 MMR
+        fetchRealMMRTiers(state.instId);
+
     </script>
 </body>
 </html>
